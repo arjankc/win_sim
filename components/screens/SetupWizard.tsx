@@ -2,7 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { WindowFrame, SetupButton } from '../ui/WindowFrame';
 import { InstallState, DEFAULT_TIPS } from '../../types';
 import { generateInstallationTips } from '../../services/geminiService';
-import { ArrowRight, HardDrive, RefreshCw, Plus, X as XIcon, AlertTriangle, Info } from 'lucide-react';
+import { 
+    ArrowRight, HardDrive, RefreshCw, Plus, X as XIcon, AlertTriangle, Info, 
+    Power, RotateCcw, Wrench, Terminal, Settings, Disc, History, Undo2, ArrowLeft, Loader2, Check, Cloud, Monitor, Trash2, Clock
+} from 'lucide-react';
 import { playSound } from '../../services/soundService';
 
 interface SetupWizardProps {
@@ -119,16 +122,40 @@ const LanguageStep: React.FC<{onNext: () => void}> = ({onNext}) => (
           
           <div className="space-y-4 max-w-md text-gray-900">
             <div className="grid grid-cols-3 items-center gap-4">
-              <label className="text-right font-medium">Language to install:</label>
-              <select className="col-span-2 border p-1 w-full"><option>English (United States)</option></select>
+              <label className="text-right font-medium text-sm">Language to install:</label>
+              <select className="col-span-2 border border-gray-300 p-1 w-full text-sm outline-none focus:border-blue-500 cursor-pointer hover:border-blue-400">
+                  <option>English (United States)</option>
+                  <option>English (United Kingdom)</option>
+                  <option>French (France)</option>
+                  <option>German (Germany)</option>
+                  <option>Spanish (Spain)</option>
+                  <option>Japanese</option>
+                  <option>Chinese (Simplified)</option>
+              </select>
             </div>
             <div className="grid grid-cols-3 items-center gap-4">
-              <label className="text-right font-medium">Time and currency:</label>
-              <select className="col-span-2 border p-1 w-full"><option>English (United States)</option></select>
+              <label className="text-right font-medium text-sm">Time and currency format:</label>
+              <select className="col-span-2 border border-gray-300 p-1 w-full text-sm outline-none focus:border-blue-500 cursor-pointer hover:border-blue-400">
+                  <option>English (United States)</option>
+                  <option>English (United Kingdom)</option>
+                  <option>French (France)</option>
+                  <option>German (Germany)</option>
+                  <option>Spanish (Spain)</option>
+                  <option>Japanese (Japan)</option>
+                  <option>Chinese (Simplified, China)</option>
+              </select>
             </div>
             <div className="grid grid-cols-3 items-center gap-4">
-              <label className="text-right font-medium">Keyboard method:</label>
-              <select className="col-span-2 border p-1 w-full"><option>US</option></select>
+              <label className="text-right font-medium text-sm">Keyboard or input method:</label>
+              <select className="col-span-2 border border-gray-300 p-1 w-full text-sm outline-none focus:border-blue-500 cursor-pointer hover:border-blue-400">
+                  <option>US</option>
+                  <option>United Kingdom</option>
+                  <option>French</option>
+                  <option>German</option>
+                  <option>Spanish</option>
+                  <option>Japanese</option>
+                  <option>Microsoft Pinyin</option>
+              </select>
             </div>
           </div>
 
@@ -141,7 +168,7 @@ const LanguageStep: React.FC<{onNext: () => void}> = ({onNext}) => (
   </div>
 );
 
-const InstallNowStep: React.FC<{onNext: () => void}> = ({onNext}) => (
+const InstallNowStep: React.FC<{onNext: () => void, onRepair: () => void}> = ({onNext, onRepair}) => (
    <div className="w-full h-full flex items-center justify-center bg-[url('https://picsum.photos/1920/1080?blur=5')] bg-cover">
      <WindowFrame title="Windows Setup">
        <div className="h-full w-full bg-white flex flex-col items-center justify-center relative">
@@ -158,12 +185,429 @@ const InstallNowStep: React.FC<{onNext: () => void}> = ({onNext}) => (
                >
                  Install now <ArrowRight size={20}/>
                </button>
-               <div className="mt-12 text-blue-600 text-sm hover:underline cursor-pointer">Repair your computer</div>
+               <div 
+                onClick={() => { playSound('click'); onRepair(); }}
+                className="mt-12 text-blue-600 text-sm hover:underline cursor-pointer select-none"
+               >
+                 Repair your computer
+               </div>
            </div>
        </div>
      </WindowFrame>
    </div>
 );
+
+// --- RECOVERY ENVIRONMENT COMPONENTS ---
+
+const RecoveryLayout = ({ title, children, onBack }: { title: string, children?: React.ReactNode, onBack?: () => void }) => (
+    <div className="w-full h-full bg-[#0078D7] p-12 flex flex-col items-center justify-center animate-in fade-in select-none">
+        <h1 className="text-4xl font-light mb-12 self-start ml-[10%] flex items-center gap-4">
+            {onBack && <button onClick={() => { playSound('click'); onBack(); }} className="hover:bg-white/20 p-2 rounded-full"><ArrowLeft/></button>}
+            {title}
+        </h1>
+        <div className="w-full max-w-4xl">
+            {children}
+        </div>
+    </div>
+);
+
+const RecoveryOptionTile = ({ icon, title, desc, onClick }: { icon: React.ReactNode, title: string, desc?: string, onClick: () => void }) => (
+    <button onClick={() => { playSound('click'); onClick(); }} className="bg-[#0078D7] hover:bg-[#006CC1] border-2 border-transparent hover:border-white/50 p-6 flex flex-col items-start gap-4 transition-all w-full h-full text-left">
+        <div className="bg-white rounded-full p-2 text-[#0078D7]">{icon}</div>
+        <div>
+            <div className="font-semibold text-lg">{title}</div>
+            {desc && <div className="text-sm opacity-80 mt-1">{desc}</div>}
+        </div>
+    </button>
+);
+
+const RecoveryListButton = ({ title, desc, onClick }: { title: string, desc?: string, onClick: () => void }) => (
+    <button onClick={() => { playSound('click'); onClick(); }} className="w-full text-left bg-black/20 hover:bg-white/20 p-4 mb-2 transition-all border border-transparent hover:border-white/30 flex flex-col">
+        <span className="font-semibold text-lg">{title}</span>
+        {desc && <span className="text-sm opacity-80">{desc}</span>}
+    </button>
+);
+
+// 1. Choose Option
+const RecoveryChooseOption = ({ onNext }: { onNext: (state: InstallState) => void }) => {
+    return (
+        <RecoveryLayout title="Choose an option">
+             <div className="grid grid-cols-2 gap-4">
+                 <RecoveryOptionTile 
+                    icon={<ArrowRight size={24}/>} 
+                    title="Continue" 
+                    desc="Exit and continue to Windows" 
+                    onClick={() => onNext(InstallState.REBOOT_REQUIRED)}
+                 />
+                 <RecoveryOptionTile 
+                    icon={<Disc size={24}/>} 
+                    title="Use a device" 
+                    desc="Use a USB drive, network connection, or Windows recovery DVD" 
+                    onClick={() => {}} // Placeholder
+                 />
+                 <RecoveryOptionTile 
+                    icon={<Wrench size={24}/>} 
+                    title="Troubleshoot" 
+                    desc="Reset your PC or see advanced options" 
+                    onClick={() => onNext(InstallState.RECOVERY_TROUBLESHOOT)}
+                 />
+                 <RecoveryOptionTile 
+                    icon={<Power size={24}/>} 
+                    title="Turn off your PC" 
+                    onClick={() => window.location.reload()}
+                 />
+             </div>
+        </RecoveryLayout>
+    );
+};
+
+// 2. Troubleshoot
+const RecoveryTroubleshoot = ({ onNext }: { onNext: (state: InstallState) => void }) => {
+    return (
+        <RecoveryLayout title="Troubleshoot" onBack={() => onNext(InstallState.RECOVERY_CHOOSE_OPTION)}>
+             <div className="grid grid-cols-2 gap-4">
+                 <RecoveryOptionTile 
+                    icon={<RotateCcw size={24}/>} 
+                    title="Reset this PC" 
+                    desc="Lets you choose to keep or remove your personal files, and then reinstalls Windows." 
+                    onClick={() => onNext(InstallState.RECOVERY_RESET_KEEP_REMOVE)}
+                 />
+                 <RecoveryOptionTile 
+                    icon={<Wrench size={24}/>} 
+                    title="Advanced options" 
+                    onClick={() => onNext(InstallState.RECOVERY_ADVANCED)}
+                 />
+             </div>
+        </RecoveryLayout>
+    );
+};
+
+// 3. Reset PC Flow
+const ResetPC_KeepOrRemove = ({ onNext }: { onNext: (state: InstallState) => void }) => (
+    <RecoveryLayout title="Reset this PC" onBack={() => onNext(InstallState.RECOVERY_TROUBLESHOOT)}>
+        <div className="max-w-xl mx-auto space-y-4">
+            <RecoveryListButton 
+                title="Keep my files" 
+                desc="Removes apps and settings, but keeps your personal files." 
+                onClick={() => onNext(InstallState.RECOVERY_RESET_CLOUD_LOCAL)}
+            />
+            <RecoveryListButton 
+                title="Remove everything" 
+                desc="Removes all of your personal files, apps, and settings." 
+                onClick={() => onNext(InstallState.RECOVERY_RESET_CLOUD_LOCAL)}
+            />
+        </div>
+    </RecoveryLayout>
+);
+
+const ResetPC_CloudOrLocal = ({ onNext }: { onNext: (state: InstallState) => void }) => (
+    <RecoveryLayout title="Reset this PC" onBack={() => onNext(InstallState.RECOVERY_RESET_KEEP_REMOVE)}>
+        <div className="max-w-xl mx-auto space-y-4">
+            <RecoveryListButton 
+                title="Cloud download" 
+                desc="Download and reinstall Windows" 
+                onClick={() => onNext(InstallState.RECOVERY_RESET_CONFIRM)}
+            />
+            <RecoveryListButton 
+                title="Local reinstall" 
+                desc="Reinstall Windows from this device" 
+                onClick={() => onNext(InstallState.RECOVERY_RESET_CONFIRM)}
+            />
+        </div>
+    </RecoveryLayout>
+);
+
+const ResetPC_Confirm = ({ onNext }: { onNext: (state: InstallState) => void }) => (
+    <RecoveryLayout title="Reset this PC" onBack={() => onNext(InstallState.RECOVERY_RESET_CLOUD_LOCAL)}>
+        <div className="max-w-2xl mx-auto">
+            <div className="bg-black/20 p-6 mb-8 text-sm space-y-4">
+                <h3 className="font-semibold text-lg">Ready to reset this PC</h3>
+                <p>Resetting will:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                    <li>Remove all apps and programs that didn't come with this PC</li>
+                    <li>Change settings back to their defaults</li>
+                    <li>Reinstall Windows without removing your personal files</li>
+                </ul>
+            </div>
+            <div className="flex justify-end gap-4">
+                <button onClick={() => onNext(InstallState.RECOVERY_RESET_CLOUD_LOCAL)} className="px-6 py-2 border border-white/30 hover:bg-white/10">Cancel</button>
+                <button onClick={() => onNext(InstallState.RECOVERY_RESET_PROGRESS)} className="px-6 py-2 bg-white text-[#0078D7] hover:bg-gray-100 font-semibold shadow-lg">Reset</button>
+            </div>
+        </div>
+    </RecoveryLayout>
+);
+
+const ResetPC_Progress = ({ onComplete }: { onComplete: () => void }) => {
+    const [progress, setProgress] = useState(0);
+    
+    useEffect(() => {
+        const t = setInterval(() => {
+            setProgress(prev => {
+                if(prev >= 100) {
+                    clearInterval(t);
+                    onComplete();
+                    return 100;
+                }
+                return prev + 0.5; // Slow-ish
+            });
+        }, 100);
+        return () => clearInterval(t);
+    }, []);
+
+    return (
+        <div className="w-full h-full bg-black text-white flex flex-col items-center justify-center p-8">
+            <Loader2 className="animate-spin mb-8 text-white/80" size={48}/>
+            <div className="text-2xl font-light mb-2">Resetting this PC {Math.round(progress)}%</div>
+            <div className="text-gray-400">This will take a while. Your PC will restart.</div>
+        </div>
+    )
+};
+
+// 4. Advanced Options
+const RecoveryAdvanced = ({ onNext, onOpenCmd }: { onNext: (state: InstallState) => void, onOpenCmd: () => void }) => {
+    return (
+        <RecoveryLayout title="Advanced options" onBack={() => onNext(InstallState.RECOVERY_TROUBLESHOOT)}>
+             <div className="grid grid-cols-3 gap-4 max-w-5xl">
+                 <RecoveryOptionTile 
+                    icon={<Wrench size={24}/>} 
+                    title="Startup Repair" 
+                    desc="Fix problems that keep Windows from loading" 
+                    onClick={() => onNext(InstallState.RECOVERY_STARTUP_REPAIR)}
+                 />
+                 <RecoveryOptionTile 
+                    icon={<Settings size={24}/>} 
+                    title="UEFI Firmware Settings" 
+                    desc="Change settings in your PC's UEFI firmware"
+                    onClick={() => onNext(InstallState.BIOS_POST)}
+                 />
+                 <RecoveryOptionTile 
+                    icon={<Terminal size={24}/>} 
+                    title="Command Prompt" 
+                    desc="Use the Command Prompt for advanced troubleshooting"
+                    onClick={onOpenCmd}
+                 />
+                 <RecoveryOptionTile 
+                    icon={<History size={24}/>} 
+                    title="System Restore" 
+                    desc="Use a restore point recorded on your PC to restore Windows"
+                    onClick={() => onNext(InstallState.RECOVERY_SYSTEM_RESTORE)} 
+                 />
+                 <RecoveryOptionTile 
+                    icon={<Undo2 size={24}/>} 
+                    title="Uninstall Updates" 
+                    desc="Remove recently installed quality or feature updates"
+                    onClick={() => onNext(InstallState.RECOVERY_UNINSTALL_UPDATES)} 
+                 />
+                 <RecoveryOptionTile 
+                    icon={<Disc size={24}/>} 
+                    title="System Image Recovery" 
+                    desc="Recover Windows using a specific system image file"
+                    onClick={() => onNext(InstallState.RECOVERY_IMAGE_RECOVERY)} 
+                 />
+             </div>
+        </RecoveryLayout>
+    );
+};
+
+// 5. Tool Implementations
+
+const StartupRepairStep = ({ onNext }: { onNext: (state: InstallState) => void }) => {
+    const [status, setStatus] = useState("Diagnosing your PC");
+    
+    useEffect(() => {
+        const t1 = setTimeout(() => setStatus("Checking disk for errors. This might take over an hour."), 3000);
+        const t2 = setTimeout(() => setStatus("Attempting repairs..."), 6000);
+        const t3 = setTimeout(() => setStatus("Finished"), 9000);
+
+        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    }, []);
+
+    if (status === "Finished") {
+        return (
+            <div className="w-full h-full bg-[#0078D7] flex flex-col items-center justify-center p-8 animate-in fade-in">
+                <div className="bg-white text-black p-6 max-w-md shadow-xl border-2 border-white">
+                    <h2 className="text-xl mb-4 text-[#0078D7]">Startup Repair</h2>
+                    <p className="mb-4 text-sm">Startup Repair could not repair your PC</p>
+                    <p className="mb-6 text-sm">Press "Advanced options" to try other repair options to repair your PC or "Shut down" to turn off your PC.</p>
+                    <p className="mb-6 text-xs text-gray-500">Log file: X:\Windows\System32\Logfiles\Srt\SrtTrail.txt</p>
+                    <div className="flex justify-end gap-2">
+                        <button onClick={() => window.location.reload()} className="px-4 py-1 border border-gray-400 hover:bg-gray-100">Shut down</button>
+                        <button onClick={() => onNext(InstallState.RECOVERY_ADVANCED)} className="px-4 py-1 border border-gray-400 hover:bg-gray-100">Advanced options</button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="w-full h-full bg-black flex flex-col items-center justify-center pt-20 animate-in fade-in">
+             <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Windows_logo_-_2012.png" 
+                alt="Windows Logo" 
+                className="w-24 h-auto mb-16"
+            />
+            <Loader2 className="animate-spin text-white mb-8" size={48}/>
+            <div className="text-white text-lg font-light">{status}</div>
+        </div>
+    );
+};
+
+const SystemRestoreStep = ({ onBack }: { onBack: () => void }) => {
+    const [step, setStep] = useState<'select' | 'confirm' | 'restoring' | 'done'>('select');
+    const [progress, setProgress] = useState(0);
+
+    useEffect(() => {
+        if(step === 'restoring') {
+            const t = setInterval(() => {
+                setProgress(prev => {
+                    if (prev >= 100) {
+                        clearInterval(t);
+                        setStep('done');
+                        return 100;
+                    }
+                    return prev + 1;
+                });
+            }, 100);
+            return () => clearInterval(t);
+        }
+    }, [step]);
+
+    if (step === 'select') {
+        return (
+            <div className="w-full h-full bg-[#0078D7] flex items-center justify-center p-8 animate-in fade-in">
+                <WindowFrame title="System Restore" className="w-[600px] h-[450px] bg-white text-black shadow-2xl">
+                    <div className="p-4 flex flex-col h-full bg-white">
+                        <h2 className="text-lg font-semibold text-[#0078D7] mb-2">Restore system files and settings</h2>
+                        <p className="text-sm mb-4">System Restore can help fix problems that might be making your computer run slowly or stop responding.</p>
+                        
+                        <div className="border border-gray-300 flex-1 overflow-hidden flex flex-col">
+                            <div className="bg-gray-100 p-2 border-b border-gray-300 text-xs font-semibold grid grid-cols-[150px_1fr_100px]">
+                                <span>Date and Time</span>
+                                <span>Description</span>
+                                <span>Type</span>
+                            </div>
+                            <div className="p-2 text-xs grid grid-cols-[150px_1fr_100px] hover:bg-blue-100 cursor-pointer selected:bg-blue-200 bg-blue-50">
+                                <span>01/01/2025 10:00 PM</span>
+                                <span>Automatic Restore Point</span>
+                                <span>System</span>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2 mt-4">
+                            <button onClick={onBack} className="px-4 py-1 border border-gray-400 hover:bg-gray-100">Cancel</button>
+                            <button onClick={() => setStep('confirm')} className="px-4 py-1 border border-gray-400 hover:bg-gray-100">Next &gt;</button>
+                        </div>
+                    </div>
+                </WindowFrame>
+            </div>
+        );
+    }
+
+    if (step === 'confirm') {
+        return (
+            <div className="w-full h-full bg-[#0078D7] flex items-center justify-center p-8 animate-in fade-in">
+                <div className="bg-white p-6 shadow-xl w-[500px]">
+                    <h3 className="text-lg font-semibold mb-4 text-[#0078D7]">Confirm your restore point</h3>
+                    <p className="mb-4 text-sm">Your computer will be restored to the state it was in before the event in the description field below.</p>
+                    <div className="bg-gray-100 p-2 mb-4 border text-sm">
+                        <b>Date:</b> 01/01/2025 10:00 PM<br/>
+                        <b>Description:</b> Automatic Restore Point
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <button onClick={() => setStep('select')} className="px-4 py-1 border border-gray-400">Back</button>
+                        <button onClick={() => setStep('restoring')} className="px-4 py-1 border border-gray-400">Finish</button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    if (step === 'restoring') {
+        return (
+            <div className="w-full h-full bg-black text-white flex flex-col items-center justify-center">
+                <div className="mb-4">Please wait while your Windows files and settings are being restored</div>
+                <div className="mb-8">System Restore is initializing...</div>
+                <div className="w-96 h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div className="h-full bg-green-500" style={{width: `${progress}%`}}></div>
+                </div>
+            </div>
+        )
+    }
+
+    if (step === 'done') {
+        return (
+            <div className="w-full h-full bg-[#0078D7] flex items-center justify-center animate-in fade-in">
+                 <div className="bg-white p-6 shadow-xl w-[400px]">
+                    <h3 className="text-lg font-semibold mb-4 text-[#0078D7]">System Restore</h3>
+                    <p className="text-sm mb-6">System Restore completed successfully. The system has been restored to 01/01/2025. Your documents have not been affected.</p>
+                    <div className="flex justify-end">
+                        <button onClick={() => window.location.reload()} className="px-4 py-1 border border-gray-400">Restart</button>
+                    </div>
+                 </div>
+            </div>
+        )
+    }
+
+    return null;
+};
+
+const UninstallUpdatesStep = ({ onBack }: { onBack: () => void }) => {
+    return (
+        <RecoveryLayout title="Uninstall Updates" onBack={onBack}>
+            <div className="max-w-xl mx-auto space-y-4">
+                <RecoveryListButton 
+                    title="Uninstall latest quality update" 
+                    desc="Uninstall the latest monthly quality update." 
+                    onClick={() => alert("Simulated: Quality update uninstalled.")}
+                />
+                <RecoveryListButton 
+                    title="Uninstall latest feature update" 
+                    desc="Uninstall the latest feature update." 
+                    onClick={() => alert("Simulated: Feature update uninstalled.")}
+                />
+            </div>
+        </RecoveryLayout>
+    );
+};
+
+const SystemImageRecoveryStep = ({ onBack }: { onBack: () => void }) => {
+    const [scanning, setScanning] = useState(true);
+
+    useEffect(() => {
+        const t = setTimeout(() => setScanning(false), 3000);
+        return () => clearTimeout(t);
+    }, []);
+
+    if (scanning) {
+        return (
+            <div className="w-full h-full bg-[#0078D7] flex flex-col items-center justify-center animate-in fade-in">
+                <div className="bg-white p-8 shadow-xl flex flex-col items-center">
+                    <Loader2 className="animate-spin text-[#0078D7] mb-4" size={32}/>
+                    <div className="text-gray-900">Scanning for system image disks...</div>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="w-full h-full bg-[#0078D7] flex items-center justify-center animate-in fade-in">
+            <div className="bg-white border border-[#1883D7] shadow-xl p-4 w-[500px]">
+                <div className="flex items-center gap-2 mb-4 text-[#0078D7]">
+                    <Info size={24}/>
+                    <h3 className="text-lg">Re-image your computer</h3>
+                </div>
+                <p className="text-sm text-gray-800 mb-6">Windows cannot find a system image on this computer.</p>
+                <p className="text-sm text-gray-800 mb-6">Attach the backup hard disk or insert the final DVD from a backup set and click Retry. Alternatively, close this dialog for more options.</p>
+                <div className="flex justify-end gap-2">
+                    <button onClick={onBack} className="px-6 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Cancel</button>
+                    <button onClick={() => setScanning(true)} className="px-6 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Retry</button>
+                </div>
+            </div>
+        </div>
+    )
+};
+
+// --- Product Key, License, etc (Existing) ---
 
 const ProductKeyStep: React.FC<{onNext: () => void}> = ({onNext}) => (
     <div className="w-full h-full flex items-center justify-center bg-[url('https://picsum.photos/1920/1080?blur=5')] bg-cover">
@@ -479,6 +923,15 @@ const PartitionStep: React.FC<{onNext: () => void}> = ({onNext}) => {
     );
 };
 
+// Define installation stages for consistency
+const INSTALL_STAGES = [
+    { label: "Copying Windows files", threshold: 5, showPercent: false },
+    { label: "Getting files ready for installation", threshold: 85, showPercent: true },
+    { label: "Installing features", threshold: 92, showPercent: false },
+    { label: "Installing updates", threshold: 97, showPercent: false },
+    { label: "Finishing up", threshold: 100, showPercent: false }
+];
+
 const CopyingStep: React.FC<{onNext: () => void, onBack: () => void}> = ({onNext, onBack}) => {
     const [progress, setProgress] = useState(0);
     const [installTips, setInstallTips] = useState<string[]>(DEFAULT_TIPS);
@@ -575,6 +1028,17 @@ const CopyingStep: React.FC<{onNext: () => void, onBack: () => void}> = ({onNext
         return Math.floor(((p - 5) / 80) * 100);
     };
 
+    const getCurrentStageIndex = (p: number) => {
+        if (p < 5) return 0;
+        if (p < 85) return 1;
+        if (p < 92) return 2;
+        if (p < 97) return 3;
+        if (p < 100) return 4;
+        return 4;
+    };
+
+    const currentStage = getCurrentStageIndex(progress);
+
     return (
         <div className="w-full h-full flex items-center justify-center bg-[url('https://picsum.photos/1920/1080?blur=5')] bg-cover">
           <WindowFrame title="Windows Setup">
@@ -615,34 +1079,42 @@ const CopyingStep: React.FC<{onNext: () => void, onBack: () => void}> = ({onNext
                 <div className="h-full w-full bg-white p-12 flex flex-col relative overflow-hidden text-gray-900">
                     <h2 className="text-xl text-[#0078D7] mb-8">Installing Windows</h2>
                     <div className="space-y-4 text-gray-700 select-none">
-                        <div className="flex items-center gap-3">
-                            {progress > 5 ? <span className="text-green-600 font-bold">✓</span> : <span className="w-4"/>} 
-                            <span className={progress <= 5 ? "font-bold" : "text-gray-500"}>Copying Windows files ({progress > 5 ? '100' : '0'}%)</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            {progress >= 85 ? <span className="text-green-600 font-bold">✓</span> : <span className="w-4"/>} 
-                            <span className={progress > 5 && progress < 85 ? "font-bold" : (progress >= 85 ? "text-gray-500" : "")}>
-                                Getting files ready for installation ({getFilesReadyPercent(progress)}%)
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            {progress >= 92 ? <span className="text-green-600 font-bold">✓</span> : <span className="w-4"/>} 
-                            <span className={progress >= 85 && progress < 92 ? "font-bold" : (progress >= 92 ? "text-gray-500" : "")}>Installing features</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            {progress >= 97 ? <span className="text-green-600 font-bold">✓</span> : <span className="w-4"/>} 
-                            <span className={progress >= 92 && progress < 97 ? "font-bold" : (progress >= 97 ? "text-gray-500" : "")}>Installing updates</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            {progress >= 100 ? <span className="text-green-600 font-bold">✓</span> : <span className="w-4"/>} 
-                            <span className={progress >= 97 && progress < 100 ? "font-bold" : (progress >= 100 ? "text-gray-500" : "")}>Finishing up</span>
-                        </div>
+                        {INSTALL_STAGES.map((stage, idx) => {
+                            const isCompleted = currentStage > idx;
+                            const isActive = currentStage === idx;
+                            
+                            return (
+                                <div key={idx} className="flex items-center gap-3">
+                                    <div className="w-5 flex justify-center">
+                                        {isCompleted ? (
+                                            <Check className="text-green-600 font-bold" size={18}/>
+                                        ) : (
+                                            <span className="w-4"/>
+                                        )}
+                                    </div>
+                                    <span className={`${isActive ? "font-bold text-black" : (isCompleted ? "text-gray-500" : "text-gray-400")}`}>
+                                        {stage.label} {stage.showPercent && isActive ? `(${getFilesReadyPercent(progress)}%)` : ''}
+                                        {stage.label === 'Copying Windows files' && isActive && progress > 2 && ' (100%)'}
+                                    </span>
+                                </div>
+                            );
+                        })}
                     </div>
-                    <div className="absolute bottom-0 left-0 w-full bg-gray-100 h-24 p-6 border-t border-gray-200">
-                        <div className="w-full h-4 bg-gray-300 rounded-full overflow-hidden shadow-inner">
-                            <div className="h-full bg-[#0078D7] transition-all duration-500 ease-out" style={{ width: `${progress}%` }}/>
+                    
+                    <div className="absolute bottom-0 left-0 w-full bg-gray-100 h-28 p-6 border-t border-gray-200 flex flex-col justify-between">
+                        <div className="w-full h-4 bg-gray-300 rounded-full overflow-hidden shadow-inner relative">
+                            <div className="h-full bg-[#00AA00] transition-all duration-300 ease-linear" style={{ width: `${progress}%` }}/>
                         </div>
-                        <div className="mt-4 text-center text-gray-500 text-sm italic animate-fade-in transition-opacity duration-500">"{installTips[currentTipIndex % installTips.length]}"</div>
+                        <div className="relative h-6 mt-2 overflow-hidden">
+                             {installTips.map((tip, i) => (
+                                 <div 
+                                    key={i} 
+                                    className={`absolute inset-0 text-center text-gray-600 text-sm italic transition-opacity duration-1000 flex items-center justify-center ${i === currentTipIndex ? 'opacity-100' : 'opacity-0'}`}
+                                 >
+                                     "{tip}"
+                                 </div>
+                             ))}
+                        </div>
                     </div>
                 </div>
              )}
@@ -670,21 +1142,50 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ state, onNext }) => {
   const renderStep = () => {
     switch (state) {
         case InstallState.SETUP_LANGUAGE:
-        return <LanguageStep onNext={() => onNext(InstallState.SETUP_INSTALL_NOW)} />;
+            return <LanguageStep onNext={() => onNext(InstallState.SETUP_INSTALL_NOW)} />;
         case InstallState.SETUP_INSTALL_NOW:
-        return <InstallNowStep onNext={() => onNext(InstallState.SETUP_KEY)} />;
+            return <InstallNowStep onNext={() => onNext(InstallState.SETUP_KEY)} onRepair={() => onNext(InstallState.RECOVERY_CHOOSE_OPTION)} />;
         case InstallState.SETUP_KEY:
-        return <ProductKeyStep onNext={() => onNext(InstallState.SETUP_LICENSE)} />;
+            return <ProductKeyStep onNext={() => onNext(InstallState.SETUP_LICENSE)} />;
         case InstallState.SETUP_LICENSE:
-        return <LicenseStep onNext={() => onNext(InstallState.SETUP_TYPE)} />;
+            return <LicenseStep onNext={() => onNext(InstallState.SETUP_TYPE)} />;
         case InstallState.SETUP_TYPE:
-        return <TypeStep onNext={() => onNext(InstallState.SETUP_PARTITION)} />;
+            return <TypeStep onNext={() => onNext(InstallState.SETUP_PARTITION)} />;
         case InstallState.SETUP_PARTITION:
-        return <PartitionStep onNext={() => onNext(InstallState.SETUP_COPYING)} />;
+            return <PartitionStep onNext={() => onNext(InstallState.SETUP_COPYING)} />;
         case InstallState.SETUP_COPYING:
-        return <CopyingStep onNext={() => onNext(InstallState.REBOOT_REQUIRED)} onBack={() => onNext(InstallState.SETUP_PARTITION)} />;
+            return <CopyingStep onNext={() => onNext(InstallState.REBOOT_REQUIRED)} onBack={() => onNext(InstallState.SETUP_PARTITION)} />;
+        
+        // RECOVERY ROUTES
+        case InstallState.RECOVERY_CHOOSE_OPTION:
+            return <RecoveryChooseOption onNext={onNext} />;
+        case InstallState.RECOVERY_TROUBLESHOOT:
+            return <RecoveryTroubleshoot onNext={onNext} />;
+        case InstallState.RECOVERY_ADVANCED:
+            return <RecoveryAdvanced onNext={onNext} onOpenCmd={() => setShowCmd(true)} />;
+        case InstallState.RECOVERY_STARTUP_REPAIR:
+            return <StartupRepairStep onNext={onNext} />;
+        
+        // RECOVERY - RESET PC FLOW
+        case InstallState.RECOVERY_RESET_KEEP_REMOVE:
+            return <ResetPC_KeepOrRemove onNext={onNext} />;
+        case InstallState.RECOVERY_RESET_CLOUD_LOCAL:
+            return <ResetPC_CloudOrLocal onNext={onNext} />;
+        case InstallState.RECOVERY_RESET_CONFIRM:
+            return <ResetPC_Confirm onNext={onNext} />;
+        case InstallState.RECOVERY_RESET_PROGRESS:
+            return <ResetPC_Progress onComplete={() => onNext(InstallState.BIOS_POST)} />;
+        
+        // RECOVERY - ADVANCED TOOLS
+        case InstallState.RECOVERY_SYSTEM_RESTORE:
+            return <SystemRestoreStep onBack={() => onNext(InstallState.RECOVERY_ADVANCED)} />;
+        case InstallState.RECOVERY_UNINSTALL_UPDATES:
+            return <UninstallUpdatesStep onBack={() => onNext(InstallState.RECOVERY_ADVANCED)} />;
+        case InstallState.RECOVERY_IMAGE_RECOVERY:
+            return <SystemImageRecoveryStep onBack={() => onNext(InstallState.RECOVERY_ADVANCED)} />;
+
         default:
-        return null;
+            return null;
     }
   };
 

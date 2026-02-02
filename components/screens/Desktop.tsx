@@ -4,7 +4,7 @@ import {
     Image as ImageIcon, Calculator, FileText, Power, Calendar as CalendarIcon, 
     ChevronUp, Bell, Code, Info, Moon, RefreshCcw, Folder, Terminal, ArrowLeft, 
     HardDrive, Activity, Palette, Play, Cpu, Layers, Database, ChevronRight, ChevronDown, Trash2,
-    Bluetooth, Plane, Sun, Accessibility, BatteryCharging, Gamepad2, Flag, Smile, Bomb
+    Bluetooth, Plane, Sun, Accessibility, BatteryCharging, Gamepad2, Flag, Smile, Bomb, Copy
 } from 'lucide-react';
 import { generateWelcomeMessage } from '../../services/geminiService';
 import { playSound } from '../../services/soundService';
@@ -26,6 +26,7 @@ interface DesktopWindow {
     zIndex: number;
     minimized: boolean;
     maximized: boolean;
+    restoreRect?: { x: number, y: number, width: number, height: number }; // For restoring from maximize
     type: string; // 'app' | 'system'
 }
 
@@ -146,7 +147,7 @@ const MinesweeperApp = () => {
     };
 
     return (
-        <div className="h-full bg-[#C0C0C0] p-1 border-t-2 border-l-2 border-white border-b-2 border-r-2 border-gray-500 flex flex-col items-center">
+        <div className="h-full bg-[#C0C0C0] p-1 border-t-2 border-l-2 border-white border-b-2 border-r-2 border-gray-500 flex flex-col items-center text-black">
             <div className="w-full flex justify-between items-center bg-[#C0C0C0] border-2 border-gray-400 p-1 mb-2">
                 <div className="bg-black text-red-500 font-mono text-xl px-1 border border-gray-500 w-12 text-center">
                     {Math.max(0, MINES - grid.filter(c => c.isFlagged).length).toString().padStart(3, '0')}
@@ -234,9 +235,6 @@ const QuickSettings = ({ isDark, setIsDark, bgImage }: { isDark: boolean, setIsD
     );
 };
 
-// ... (Other apps: BrowserApp, RegEditApp, NotepadApp, PaintApp, TaskManagerApp, CalculatorApp, SettingsApp, TerminalApp, ExplorerApp, RunDialog - KEPT AS IS)
-// Re-implementing existing apps for file completeness
-
 const BrowserApp = () => {
     const [url, setUrl] = useState("https://www.bing.com");
     const [inputValue, setInputValue] = useState("https://www.bing.com");
@@ -254,14 +252,14 @@ const BrowserApp = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white text-black font-sans">
+        <div className="flex flex-col h-full bg-white text-gray-900 font-sans">
             {/* Toolbar */}
             <div className="flex items-center gap-2 p-2 border-b bg-gray-50">
                 <button className="p-1 hover:bg-gray-200 rounded text-gray-600"><ArrowLeft size={16}/></button>
                 <button className="p-1 hover:bg-gray-200 rounded text-gray-600"><RefreshCcw size={14}/></button>
                 <form onSubmit={navigate} className="flex-1">
                     <input 
-                        className="w-full border border-gray-300 rounded-full px-4 py-1.5 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all" 
+                        className="w-full border border-gray-300 rounded-full px-4 py-1.5 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-black" 
                         value={inputValue} 
                         onChange={e=>setInputValue(e.target.value)} 
                         onFocus={(e) => e.target.select()}
@@ -275,14 +273,14 @@ const BrowserApp = () => {
                          <div className="bg-black/10 backdrop-blur-sm p-10 rounded-xl flex flex-col items-center w-full h-full justify-center">
                             <h1 className="text-6xl font-bold text-white mb-8 drop-shadow-lg">Bing</h1>
                             <div className="w-[600px] flex border-2 border-white/50 rounded-full shadow-2xl overflow-hidden p-3 bg-white">
-                                <input className="flex-1 outline-none ml-2 text-lg" placeholder="Search the web" />
+                                <input className="flex-1 outline-none ml-2 text-lg text-black" placeholder="Search the web" />
                                 <Search className="text-blue-500 mr-2" size={24} />
                             </div>
                          </div>
                      </div>
                 )}
                 {page === 'google' && (
-                    <div className="flex flex-col items-center justify-center h-full bg-white">
+                    <div className="flex flex-col items-center justify-center h-full bg-white text-black">
                          <div className="text-6xl font-bold mb-8 flex gap-1">
                              <span className="text-blue-500">G</span>
                              <span className="text-red-500">o</span>
@@ -293,7 +291,7 @@ const BrowserApp = () => {
                          </div>
                          <div className="w-[500px] flex border border-gray-200 hover:shadow-md rounded-full p-3 bg-white transition-shadow">
                             <Search className="text-gray-400 ml-2" />
-                            <input className="flex-1 outline-none ml-3" />
+                            <input className="flex-1 outline-none ml-3 text-black" />
                          </div>
                          <div className="mt-8 flex gap-4">
                              <button className="bg-gray-50 border border-transparent hover:border-gray-200 hover:shadow-sm px-4 py-2 text-sm text-gray-800 rounded">Google Search</button>
@@ -374,7 +372,7 @@ const RegEditApp = () => {
                         </div>
                     ) : <div className="w-4"/>}
                     <Folder size={14} className="text-yellow-500 fill-yellow-500"/>
-                    <span className="text-xs truncate">{node.name}</span>
+                    <span className="text-xs truncate text-gray-800">{node.name}</span>
                 </div>
                 {isExpanded && node.children && (
                     <div className="pl-4 border-l border-gray-300 border-dotted ml-2">
@@ -400,7 +398,7 @@ const RegEditApp = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white text-xs font-sans">
+        <div className="flex flex-col h-full bg-white text-gray-900 text-xs font-sans">
              <div className="flex gap-1 p-1 border-b border-gray-200 bg-gray-50 text-gray-600">
                  <span>File</span> <span>Edit</span> <span>View</span> <span>Favorites</span> <span>Help</span>
              </div>
@@ -510,7 +508,7 @@ const PaintApp = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#f0f0f0]">
+        <div className="flex flex-col h-full bg-[#f0f0f0] text-gray-900">
              <div className="h-24 bg-[#f5f6f7] border-b border-gray-300 flex items-center px-4 gap-6 select-none">
                  <div className="flex flex-col gap-2">
                      <span className="text-xs text-gray-500 text-center">Brushes</span>
@@ -591,8 +589,8 @@ const TaskManagerApp = ({ openWindows, onCloseWindow, onBsod }: { openWindows: D
     };
 
     return (
-        <div className="flex flex-col h-full bg-white text-sm font-sans select-none">
-            <div className="flex gap-1 p-2 border-b border-gray-200 text-xs">
+        <div className="flex flex-col h-full bg-white text-gray-900 text-sm font-sans select-none">
+            <div className="flex gap-1 p-2 border-b border-gray-200 text-xs text-gray-800">
                 <button onClick={() => setActiveTab('processes')} className={`px-3 py-1 rounded hover:bg-gray-100 ${activeTab === 'processes' ? 'bg-gray-200 font-semibold' : ''}`}>Processes</button>
                 <button onClick={() => setActiveTab('performance')} className={`px-3 py-1 rounded hover:bg-gray-100 ${activeTab === 'performance' ? 'bg-gray-200 font-semibold' : ''}`}>Performance</button>
             </div>
@@ -613,7 +611,7 @@ const TaskManagerApp = ({ openWindows, onCloseWindow, onBsod }: { openWindows: D
                         >
                             <div className="flex-1 flex items-center gap-2 truncate">
                                 <span className="text-gray-500">{p.icon}</span>
-                                <span>{p.title}</span>
+                                <span className="text-gray-900">{p.title}</span>
                             </div>
                             <div className="w-16 text-right text-gray-600">{p.cpu}</div>
                             <div className="w-20 text-right text-gray-600">{p.mem}</div>
@@ -624,7 +622,7 @@ const TaskManagerApp = ({ openWindows, onCloseWindow, onBsod }: { openWindows: D
                     <button 
                         onClick={handleEndTask}
                         disabled={!selectedId}
-                        className="px-4 py-1.5 bg-white border border-gray-300 hover:bg-gray-100 disabled:opacity-50 text-xs rounded shadow-sm"
+                        className="px-4 py-1.5 bg-white border border-gray-300 hover:bg-gray-100 disabled:opacity-50 text-xs rounded shadow-sm text-gray-900"
                     >
                         End task
                     </button>
@@ -637,7 +635,7 @@ const TaskManagerApp = ({ openWindows, onCloseWindow, onBsod }: { openWindows: D
                     <div className="w-32 bg-gray-50 border-r border-gray-200 p-2 flex flex-col gap-2">
                         <div className="bg-blue-50 border border-blue-200 p-2 rounded cursor-pointer">
                             <div className="font-bold text-blue-700 text-xs">CPU</div>
-                            <div className="text-xl font-light">{cpuHistory[cpuHistory.length-1].toFixed(0)}%</div>
+                            <div className="text-xl font-light text-gray-900">{cpuHistory[cpuHistory.length-1].toFixed(0)}%</div>
                         </div>
                         <div className="p-2 rounded hover:bg-gray-100 cursor-pointer text-gray-600">
                              <div className="font-bold text-xs">Memory</div>
@@ -646,7 +644,7 @@ const TaskManagerApp = ({ openWindows, onCloseWindow, onBsod }: { openWindows: D
                     </div>
                     <div className="flex-1 p-4 flex flex-col">
                          <div className="flex justify-between items-end mb-2">
-                             <div className="text-lg">CPU</div>
+                             <div className="text-lg text-gray-800">CPU</div>
                              <div className="text-xs text-gray-500">Virtual CPU @ 3.50GHz</div>
                          </div>
                          <div className="flex-1 border border-gray-300 bg-white relative">
@@ -692,8 +690,8 @@ const CalculatorApp = () => {
     const handleOp = (o: string) => { setPrev(display); setOp(o); setNewNum(true); };
     const handleEq = () => { if (!prev || !op) return; const cur = parseFloat(display); const p = parseFloat(prev); let res = 0; if (op === '+') res = p + cur; if (op === '-') res = p - cur; if (op === '*') res = p * cur; if (op === '/') res = p / cur; setDisplay(res.toString().slice(0, 12)); setOp(null); setPrev(null); setNewNum(true); };
     const handleClear = () => { setDisplay('0'); setPrev(null); setOp(null); setNewNum(true); };
-    const btnClass = "flex items-center justify-center bg-white hover:bg-gray-100 rounded text-sm font-medium border border-gray-100 transition-colors active:bg-gray-200";
-    const opClass = "flex items-center justify-center bg-gray-50 hover:bg-gray-200 rounded text-sm font-medium border border-gray-100 transition-colors";
+    const btnClass = "flex items-center justify-center bg-white hover:bg-gray-100 rounded text-sm font-medium border border-gray-100 transition-colors active:bg-gray-200 text-black";
+    const opClass = "flex items-center justify-center bg-gray-50 hover:bg-gray-200 rounded text-sm font-medium border border-gray-100 transition-colors text-black";
     const eqClass = "flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium transition-colors";
     return (
         <div className="h-full bg-[#F3F3F3] flex flex-col p-2 select-none text-black">
@@ -732,7 +730,7 @@ const SettingsApp = ({ bgImage, setBgImage, theme, setTheme }: { bgImage: string
     ];
 
     const isDark = theme === 'dark';
-    const bgClass = isDark ? 'bg-[#202020] text-white' : 'bg-[#F0F0F0] text-black';
+    const bgClass = isDark ? 'bg-[#202020] text-white' : 'bg-[#F0F0F0] text-gray-900';
     const cardClass = isDark ? 'bg-[#2b2b2b] border-[#444]' : 'bg-white border-gray-200';
 
     return (
@@ -913,7 +911,7 @@ const ExplorerApp = ({ onBsod }: { onBsod: () => void }) => {
     }
 
     return (
-        <div className="flex flex-col h-full bg-white text-black font-sans text-sm">
+        <div className="flex flex-col h-full bg-white text-gray-900 font-sans text-sm">
             <div className="flex items-center gap-2 p-2 border-b border-gray-200 bg-gray-50">
                 <button onClick={() => { path.length > 1 && setPath(path.slice(0, -1)); setSelectedItem(null); }} disabled={path.length <= 1} className="p-1 hover:bg-gray-200 rounded disabled:opacity-30"><ArrowLeft size={16}/></button>
                 <div className="flex-1 border border-gray-300 bg-white px-2 py-1 flex items-center gap-1 text-gray-600">
@@ -931,7 +929,7 @@ const ExplorerApp = ({ onBsod }: { onBsod: () => void }) => {
                         className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer group ${selectedItem === item.name ? 'bg-blue-100 border-blue-200' : 'border-transparent hover:bg-blue-50 hover:border-blue-100'}`}
                     >
                         {item.icon}
-                        <span className="text-center text-xs group-hover:text-blue-600 truncate w-full">{item.name}</span>
+                        <span className="text-center text-xs group-hover:text-blue-600 truncate w-full text-gray-800">{item.name}</span>
                         {item.info && <span className="text-[10px] text-gray-400">{item.info}</span>}
                     </div>
                 ))}
@@ -944,7 +942,7 @@ const RunDialog = ({ onClose, onRun }: { onClose: () => void, onRun: (cmd: strin
     const [cmd, setCmd] = useState("");
     
     return (
-        <div className="fixed bottom-10 left-4 w-96 bg-[#F0F0F0] border border-[#1883D7] shadow-xl z-[10002] p-4 text-sm font-sans rounded-sm animate-in slide-in-from-bottom-5 zoom-in-95">
+        <div className="fixed bottom-10 left-4 w-96 bg-[#F0F0F0] border border-[#1883D7] shadow-xl z-[10002] p-4 text-sm font-sans rounded-sm animate-in slide-in-from-bottom-5 zoom-in-95 text-gray-900">
             <div className="flex justify-between items-start mb-4">
                 <div className="flex gap-4">
                     <Play className="text-gray-600 mt-1" size={24}/>
@@ -959,7 +957,7 @@ const RunDialog = ({ onClose, onRun }: { onClose: () => void, onRun: (cmd: strin
                 <label className="text-gray-700">Open:</label>
                 <input 
                     autoFocus 
-                    className="flex-1 border border-gray-300 p-1 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
+                    className="flex-1 border border-gray-300 p-1 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm bg-white"
                     value={cmd}
                     onChange={e => setCmd(e.target.value)}
                     onKeyDown={e => { if(e.key === 'Enter') onRun(cmd); }}
@@ -991,6 +989,34 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
     // Dragging State
     const [dragState, setDragState] = useState<{id: string, startX: number, startY: number, initX: number, initY: number} | null>(null);
 
+    // openWindow needs to be stable or reference safe for effects/callbacks
+    const openWindow = (id: string, title: string, icon: React.ReactNode, content: React.ReactNode, width = 800, height = 500) => {
+        playSound('window-open');
+        setWindows(prev => {
+            if (prev.find(w => w.id === id)) {
+                return prev.map(w => w.id === id ? { ...w, zIndex: Math.max(0, ...prev.map(ww => ww.zIndex)) + 1, minimized: false } : w);
+            }
+            const newZ = prev.length > 0 ? Math.max(0, ...prev.map(w => w.zIndex)) + 1 : 1;
+            return [...prev, { 
+                id, title, icon, content, width, height,
+                x: 100 + (prev.length * 30), 
+                y: 50 + (prev.length * 30), 
+                zIndex: newZ, 
+                minimized: false,
+                maximized: false,
+                type: 'app',
+                restoreRect: undefined
+            }];
+        });
+    };
+
+    const closeWindow = (id: string) => {
+        setWindows(prev => prev.filter(w => w.id !== id));
+    };
+
+    // App Launchers - Defined early to be used in effects if needed
+    const launchTaskMgr = () => openWindow('taskmgr', 'Task Manager', <Activity size={18} className="text-green-600"/>, <TaskManagerApp openWindows={[]} onCloseWindow={closeWindow} onBsod={() => setBsod(true)}/>, 600, 450);
+
     // Initial apps launch
     useEffect(() => {
         // Startup sound
@@ -1011,6 +1037,11 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
             if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
                 e.preventDefault();
                 setRunOpen(prev => !prev);
+            }
+            // Ctrl + Shift + Esc
+            if (e.ctrlKey && e.shiftKey && e.key === 'Escape') {
+                e.preventDefault();
+                launchTaskMgr();
             }
         };
 
@@ -1052,30 +1083,40 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
         setDragState(null);
     };
 
-    const openWindow = (id: string, title: string, icon: React.ReactNode, content: React.ReactNode, width = 800, height = 500) => {
-        playSound('window-open');
-        if (windows.find(w => w.id === id)) {
-            setWindows(prev => prev.map(w => w.id === id ? { ...w, zIndex: Math.max(...prev.map(ww => ww.zIndex), 0) + 1, minimized: false } : w));
-            return;
-        }
-        const newZ = windows.length > 0 ? Math.max(...windows.map(w => w.zIndex)) + 1 : 1;
-        setWindows(prev => [...prev, { 
-            id, title, icon, content, width, height,
-            x: 100 + (prev.length * 30), 
-            y: 50 + (prev.length * 30), 
-            zIndex: newZ, 
-            minimized: false,
-            maximized: false,
-            type: 'app'
-        }]);
-    };
-
-    const closeWindow = (id: string) => {
-        setWindows(prev => prev.filter(w => w.id !== id));
+    const toggleMaximize = (id: string) => {
+        setWindows(prev => prev.map(w => {
+            if (w.id !== id) return w;
+            const newMax = !w.maximized;
+            
+            if (newMax) {
+                // Maximizing: Save current state
+                return { 
+                    ...w, 
+                    maximized: true, 
+                    restoreRect: { x: w.x, y: w.y, width: w.width, height: w.height },
+                    // Set to full screen minus taskbar
+                    x: 0, y: 0, 
+                    // We handle width/height in render via style override usually, but for drag logic we can set them conceptually or rely on render
+                };
+            } else {
+                // Restoring
+                return {
+                    ...w,
+                    maximized: false,
+                    x: w.restoreRect?.x || w.x,
+                    y: w.restoreRect?.y || w.y,
+                    width: w.restoreRect?.width || w.width,
+                    height: w.restoreRect?.height || w.height
+                };
+            }
+        }));
     };
 
     const startDrag = (e: React.MouseEvent, id: string, x: number, y: number) => {
         e.preventDefault();
+        const win = windows.find(w => w.id === id);
+        if (win?.maximized) return; // Prevent dragging if maximized
+        
         setWindows(prev => prev.map(w => w.id === id ? { ...w, zIndex: Math.max(...prev.map(ww => ww.zIndex)) + 1 } : w));
         setDragState({ id, startX: e.clientX, startY: e.clientY, initX: x, initY: y });
     };
@@ -1092,7 +1133,6 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
     const launchTerminal = () => openWindow('cmd', 'Command Prompt', <Terminal size={18} className="text-gray-500"/>, <TerminalApp onBsod={() => setBsod(true)}/>, 600, 350);
     const launchExplorer = () => openWindow('pc', 'File Explorer', <Folder size={18} className="text-yellow-500"/>, <ExplorerApp onBsod={() => setBsod(true)}/>, 800, 500);
     const launchPaint = () => openWindow('paint', 'Paint', <Palette size={18} className="text-purple-500"/>, <PaintApp/>, 800, 600);
-    const launchTaskMgr = () => openWindow('taskmgr', 'Task Manager', <Activity size={18} className="text-green-600"/>, <TaskManagerApp openWindows={windows} onCloseWindow={closeWindow} onBsod={() => setBsod(true)}/>, 600, 450);
     const launchRegEdit = () => openWindow('regedit', 'Registry Editor', <Database size={18} className="text-blue-400"/>, <RegEditApp />, 800, 500);
     const launchMinesweeper = () => openWindow('minesweeper', 'Minesweeper', <Bomb size={18} className="text-black"/>, <MinesweeperApp />, 300, 360);
 
@@ -1131,7 +1171,7 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
         else if (c === 'minesweeper' || c === 'winmine') launchMinesweeper();
         else if (c === 'winver') {
             openWindow('winver', 'About Windows', <Info size={18} className="text-blue-500"/>, (
-                <div className="p-8 bg-white h-full flex flex-col gap-4">
+                <div className="p-8 bg-white h-full flex flex-col gap-4 text-gray-900">
                     <div className="text-3xl text-blue-500 font-light">Windows 11</div>
                     <div className="text-sm">Microsoft Windows<br/>Version 22H2 (OS Build 22621.1)<br/>&copy; Microsoft Corporation. All rights reserved.</div>
                     <div className="text-sm">The Windows 11 Home operating system and its user interface are protected by trademark and other pending or existing intellectual property rights in the United States and other countries/regions.</div>
@@ -1258,11 +1298,12 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
                     key={win.id}
                     className={`absolute shadow-2xl rounded-sm border flex flex-col overflow-hidden ${isDark ? 'bg-[#2b2b2b] border-[#444]' : 'bg-white border-[#1883D7]'}`}
                     style={{ 
-                        left: win.x, 
-                        top: win.y, 
-                        width: win.width, 
-                        height: win.height, 
-                        zIndex: win.zIndex 
+                        left: win.maximized ? 0 : win.x, 
+                        top: win.maximized ? 0 : win.y, 
+                        width: win.maximized ? '100%' : win.width, 
+                        height: win.maximized ? 'calc(100% - 48px)' : win.height, 
+                        zIndex: win.zIndex,
+                        borderRadius: win.maximized ? 0 : undefined
                     }}
                     onMouseDown={(e) => {
                          setWindows(prev => prev.map(w => w.id === win.id ? { ...w, zIndex: Math.max(...prev.map(ww => ww.zIndex)) + 1 } : w));
@@ -1271,6 +1312,7 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
                     <div 
                         className={`px-3 py-2 flex justify-between items-center select-none border-b cursor-default ${isDark ? 'bg-[#2b2b2b] border-[#444]' : 'bg-white border-gray-200'}`}
                         onMouseDown={(e) => startDrag(e, win.id, win.x, win.y)}
+                        onDoubleClick={() => toggleMaximize(win.id)}
                     >
                         <div className="flex items-center gap-2">
                              <span className="text-gray-500">{win.icon}</span>
@@ -1283,7 +1325,12 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
                             >
                                 <Minus size={14}/>
                             </button>
-                            <button className={`p-1.5 rounded-sm transition-colors ${isDark ? 'hover:bg-[#444] text-gray-400' : 'hover:bg-gray-200 text-gray-500'}`}><Square size={12}/></button>
+                            <button 
+                                onClick={() => toggleMaximize(win.id)}
+                                className={`p-1.5 rounded-sm transition-colors ${isDark ? 'hover:bg-[#444] text-gray-400' : 'hover:bg-gray-200 text-gray-500'}`}
+                            >
+                                {win.maximized ? <Copy size={12}/> : <Square size={12}/>}
+                            </button>
                             <button 
                                 onClick={() => closeWindow(win.id)}
                                 className={`p-1.5 hover:bg-red-500 hover:text-white rounded-sm transition-colors ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
@@ -1293,7 +1340,10 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
                         </div>
                     </div>
                     <div className="flex-1 overflow-hidden relative cursor-auto">
-                        {win.content}
+                        {win.id === 'taskmgr' 
+                            ? <TaskManagerApp openWindows={windows} onCloseWindow={closeWindow} onBsod={() => setBsod(true)}/> 
+                            : win.content
+                        }
                     </div>
                 </div>
             ))}
@@ -1336,6 +1386,10 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
                                  <div onClick={launchVSCode} className={`flex flex-col items-center gap-2 p-2 rounded cursor-pointer transition-colors ${itemHoverClass}`}>
                                      <div className="w-10 h-10 bg-blue-600 text-white rounded flex items-center justify-center"><Code/></div>
                                      <div className="text-[11px]">VS Code</div>
+                                 </div>
+                                 <div onClick={launchTaskMgr} className={`flex flex-col items-center gap-2 p-2 rounded cursor-pointer transition-colors ${itemHoverClass}`}>
+                                     <div className="w-10 h-10 bg-green-600 text-white rounded flex items-center justify-center"><Activity/></div>
+                                     <div className="text-[11px]">Task Manager</div>
                                  </div>
                                  <div onClick={launchMinesweeper} className={`flex flex-col items-center gap-2 p-2 rounded cursor-pointer transition-colors ${itemHoverClass}`}>
                                      <div className="w-10 h-10 bg-white border border-gray-300 rounded flex items-center justify-center"><Bomb size={20} className="text-black"/></div>

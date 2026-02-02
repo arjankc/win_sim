@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Minus, Square } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Minus, Square, Copy } from 'lucide-react';
 import { playSound } from '../../services/soundService';
 
 interface WindowFrameProps {
@@ -10,10 +10,21 @@ interface WindowFrameProps {
 }
 
 export const WindowFrame: React.FC<WindowFrameProps> = ({ title, children, onClose, className = '' }) => {
+  const [isMaximized, setIsMaximized] = useState(false);
+
+  const toggleMaximize = () => {
+    playSound('click');
+    setIsMaximized(!isMaximized);
+  };
+
+  const containerClass = isMaximized 
+    ? 'fixed inset-0 w-full h-full z-[100] rounded-none' 
+    : `bg-[#EFEFEF] border border-[#1883D7] shadow-2xl w-[800px] h-[600px] rounded-sm animate-in zoom-in-95 duration-200 ${className}`;
+
   return (
-    <div className={`bg-[#EFEFEF] border border-[#1883D7] shadow-2xl w-[800px] h-[600px] flex flex-col font-sans text-sm text-gray-900 animate-in zoom-in-95 duration-200 ${className}`}>
+    <div className={`flex flex-col font-sans text-sm text-gray-900 bg-[#EFEFEF] ${isMaximized ? '' : 'border border-[#1883D7]'} ${containerClass}`}>
       {/* Title Bar */}
-      <div className="bg-white px-2 py-1 flex justify-between items-center select-none">
+      <div className="bg-white px-2 py-1 flex justify-between items-center select-none shrink-0" onDoubleClick={toggleMaximize}>
         <div className="flex items-center gap-2">
            {/* Icon placeholder */}
            <div className="w-4 h-4 bg-gradient-to-tr from-orange-400 to-yellow-400 rounded-sm" />
@@ -21,13 +32,15 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ title, children, onClo
         </div>
         <div className="flex gap-1">
           <button onClick={() => playSound('click')} className="p-1 hover:bg-gray-200 text-gray-400"><Minus size={14}/></button>
-          <button onClick={() => playSound('click')} className="p-1 hover:bg-gray-200 text-gray-400"><Square size={12}/></button>
+          <button onClick={toggleMaximize} className="p-1 hover:bg-gray-200 text-gray-400">
+             {isMaximized ? <Copy size={12}/> : <Square size={12}/>}
+          </button>
           <button onClick={() => { playSound('click'); onClose?.(); }} className="p-1 hover:bg-red-500 hover:text-white text-gray-400 transition-colors"><X size={14}/></button>
         </div>
       </div>
       
       {/* Content */}
-      <div className="flex-1 p-0 relative overflow-hidden">
+      <div className="flex-1 p-0 relative overflow-hidden flex flex-col">
         {children}
       </div>
     </div>
