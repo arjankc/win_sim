@@ -104,9 +104,11 @@ const LanguageStep: React.FC<{onNext: () => void}> = ({onNext}) => (
       <div className="flex h-full">
         <div className="w-48 bg-white p-4 flex flex-col justify-between border-r border-gray-200">
             <div className="mt-4">
-                  <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-white text-4xl font-bold mx-auto mb-4">
-                    W
-                  </div>
+                  <img 
+                    src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Windows_logo_-_2012.png" 
+                    alt="Windows Logo" 
+                    className="w-24 h-auto mx-auto mb-4"
+                  />
             </div>
             <div className="text-xs text-gray-500">
                 &copy; 2025 Microsoft Corp.
@@ -145,9 +147,11 @@ const InstallNowStep: React.FC<{onNext: () => void}> = ({onNext}) => (
        <div className="h-full w-full bg-white flex flex-col items-center justify-center relative">
            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://picsum.photos/800/600?blur=2')] opacity-10 pointer-events-none"></div>
            <div className="z-10 text-center">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white text-6xl font-bold mx-auto mb-8 shadow-lg">
-                    W
-                 </div>
+                <img 
+                    src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Windows_logo_-_2012.png" 
+                    alt="Windows Logo" 
+                    className="w-32 h-auto mx-auto mb-8 drop-shadow-lg"
+                />
                <button 
                 onClick={onNext}
                 className="px-8 py-3 bg-white border border-gray-400 shadow-sm hover:shadow-md hover:border-blue-500 text-lg font-semibold flex items-center gap-2 mx-auto active:scale-95 transition-transform text-gray-900"

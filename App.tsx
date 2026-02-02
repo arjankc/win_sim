@@ -158,7 +158,11 @@ const App: React.FC = () => {
     setTimeout(() => setCurrentState(InstallState.SETUP_LANGUAGE), 4000);
     return (
       <div className="w-full h-full bg-black flex items-center justify-center flex-col gap-12 select-none">
-        <div className="w-24 h-24 bg-[#0078D7] flex items-center justify-center text-white text-6xl font-bold">W</div>
+        <img 
+            src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Windows_logo_-_2012.png" 
+            alt="Windows Logo" 
+            className="w-32 h-auto"
+        />
         <div className="w-8 h-8 border-4 border-t-white border-r-white border-b-transparent border-l-transparent rounded-full animate-spin"></div>
       </div>
     );
