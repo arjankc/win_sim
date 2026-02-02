@@ -46,6 +46,7 @@ const CommandPromptOverlay = ({ onClose }: { onClose: () => void }) => {
                 newLines.push("CLS         Clears the screen.");
                 newLines.push("DIR         Displays a list of files and subdirectories in a directory.");
                 newLines.push("VER         Displays the Windows version.");
+                newLines.push("BOOTREC     Fixes critical disk structures.");
             } else if (cmd === 'ver') {
                 newLines.push("Microsoft Windows [Version 10.0.22621.1]");
             } else if (cmd === 'dir') {
@@ -59,6 +60,10 @@ const CommandPromptOverlay = ({ onClose }: { onClose: () => void }) => {
                 newLines.push("01/01/2025  12:00 PM             3,500 setup.exe");
                 newLines.push("               1 File(s)          3,500 bytes");
                 newLines.push("               2 Dir(s)               0 bytes free");
+            } else if (cmd.startsWith('diskpart')) {
+                newLines.push("Microsoft DiskPart version 10.0.22621.1");
+                newLines.push("");
+                newLines.push("DISKPART> ");
             } else if (cmd) {
                 newLines.push(`'${cmd.split(' ')[0]}' is not recognized as an internal or external command,`);
                 newLines.push("operable program or batch file.");
@@ -401,7 +406,7 @@ const RecoveryAdvanced = ({ onNext, onOpenCmd }: { onNext: (state: InstallState)
                     icon={<Settings size={24}/>} 
                     title="UEFI Firmware Settings" 
                     desc="Change settings in your PC's UEFI firmware"
-                    onClick={() => onNext(InstallState.BIOS_POST)}
+                    onClick={() => onNext(InstallState.RECOVERY_UEFI_CONFIRM)}
                  />
                  <RecoveryOptionTile 
                     icon={<Terminal size={24}/>} 
@@ -428,6 +433,22 @@ const RecoveryAdvanced = ({ onNext, onOpenCmd }: { onNext: (state: InstallState)
                     onClick={() => onNext(InstallState.RECOVERY_IMAGE_RECOVERY)} 
                  />
              </div>
+        </RecoveryLayout>
+    );
+};
+
+const UefiSettingsConfirm = ({ onNext }: { onNext: (state: InstallState) => void }) => {
+    return (
+        <RecoveryLayout title="UEFI Firmware Settings" onBack={() => onNext(InstallState.RECOVERY_ADVANCED)}>
+            <div className="max-w-xl mx-auto">
+                <p className="mb-8">Restart to change UEFI firmware settings.</p>
+                <button 
+                    onClick={() => onNext(InstallState.BIOS_POST)}
+                    className="px-8 py-2 bg-white text-[#0078D7] hover:bg-gray-100 font-semibold shadow-lg"
+                >
+                    Restart
+                </button>
+            </div>
         </RecoveryLayout>
     );
 };
@@ -656,15 +677,31 @@ const UninstallUpdatesProgress = ({ onComplete }: { onComplete: () => void }) =>
 }
 
 const SystemImageRecoveryStep = ({ onBack }: { onBack: () => void }) => {
-    const [scanning, setScanning] = useState(true);
-    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [step, setStep] = useState<'scanning' | 'select' | 'options' | 'confirm' | 'restoring' | 'finished'>('scanning');
+    const [progress, setProgress] = useState(0);
+    const [useLatest, setUseLatest] = useState(true);
 
     useEffect(() => {
-        const t = setTimeout(() => setScanning(false), 3000);
-        return () => clearTimeout(t);
-    }, []);
+        if (step === 'scanning') {
+            const t = setTimeout(() => setStep('select'), 2000);
+            return () => clearTimeout(t);
+        }
+        if (step === 'restoring') {
+            const t = setInterval(() => {
+                setProgress(prev => {
+                    if (prev >= 100) {
+                        clearInterval(t);
+                        setStep('finished');
+                        return 100;
+                    }
+                    return prev + 0.5;
+                });
+            }, 100);
+            return () => clearInterval(t);
+        }
+    }, [step]);
 
-    if (scanning) {
+    if (step === 'scanning') {
         return (
             <div className="w-full h-full bg-[#0078D7] flex flex-col items-center justify-center animate-in fade-in">
                 <div className="bg-white p-8 shadow-xl flex flex-col items-center">
@@ -672,42 +709,125 @@ const SystemImageRecoveryStep = ({ onBack }: { onBack: () => void }) => {
                     <div className="text-gray-900">Scanning for system image disks...</div>
                 </div>
             </div>
-        )
+        );
     }
 
-    return (
-        <div className="w-full h-full bg-[#0078D7] flex items-center justify-center animate-in fade-in p-4" onClick={() => setShowAdvanced(false)}>
-            <div className="bg-white border border-[#1883D7] shadow-xl p-4 w-[500px] relative" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center gap-2 mb-4 text-[#0078D7]">
-                    <Info size={24}/>
-                    <h3 className="text-lg">Re-image your computer</h3>
-                </div>
-                <p className="text-sm text-gray-800 mb-6">Windows cannot find a system image on this computer.</p>
-                <p className="text-sm text-gray-800 mb-6">Attach the backup hard disk or insert the final DVD from a backup set and click Retry. Alternatively, close this dialog for more options.</p>
-                
-                <div className="flex justify-between items-center">
-                    <div className="relative">
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); setShowAdvanced(!showAdvanced); }}
-                            className="px-4 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm"
-                        >
-                            Advanced...
-                        </button>
-                        {showAdvanced && (
-                            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-400 shadow-lg w-64 z-10 text-sm">
-                                <button className="block w-full text-left px-4 py-2 hover:bg-[#0078D7] hover:text-white" onClick={() => alert("Search not implemented in simulator.")}>Search for a system image on the network</button>
-                                <button className="block w-full text-left px-4 py-2 hover:bg-[#0078D7] hover:text-white" onClick={() => alert("Install driver not implemented in simulator.")}>Install a driver</button>
+    if (step === 'select') {
+        return (
+            <div className="w-full h-full bg-[#0078D7] flex items-center justify-center animate-in fade-in p-4">
+                <div className="bg-white border border-[#1883D7] shadow-xl p-4 w-[600px] text-gray-900">
+                    <h3 className="text-lg text-[#0078D7] mb-4">Re-image your computer</h3>
+                    <p className="text-sm mb-4">Select a system image backup.</p>
+                    
+                    <div className="space-y-4 mb-6 text-sm">
+                        <div className="flex gap-2">
+                            <input type="radio" id="latest" checked={useLatest} onChange={() => setUseLatest(true)} className="mt-1" />
+                            <div className="flex-1">
+                                <label htmlFor="latest" className="font-semibold block">Use the latest available system image (recommended)</label>
+                                <div className="ml-1 bg-gray-100 border border-gray-300 p-2 mt-1 text-gray-600">
+                                    <div>Location: WinSim_Backup (D:)</div>
+                                    <div>Date: 01/01/2025 12:00 PM</div>
+                                    <div>Computer: DESKTOP-WINSIM</div>
+                                </div>
                             </div>
-                        )}
+                        </div>
+                        <div className="flex gap-2 items-start">
+                            <input type="radio" id="select" checked={!useLatest} onChange={() => setUseLatest(false)} className="mt-1" />
+                            <label htmlFor="select">Select a system image</label>
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                        <button onClick={onBack} className="px-6 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Cancel</button>
-                        <button onClick={() => setScanning(true)} className="px-6 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Retry</button>
+
+                    <div className="flex justify-end gap-2">
+                        <button onClick={onBack} className="px-4 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Cancel</button>
+                        <button onClick={() => setStep('options')} className="px-4 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Next &gt;</button>
                     </div>
                 </div>
             </div>
-        </div>
-    )
+        );
+    }
+
+    if (step === 'options') {
+        return (
+            <div className="w-full h-full bg-[#0078D7] flex items-center justify-center animate-in fade-in p-4">
+                <div className="bg-white border border-[#1883D7] shadow-xl p-4 w-[600px] text-gray-900">
+                    <h3 className="text-lg text-[#0078D7] mb-4">Re-image your computer</h3>
+                    <p className="text-sm mb-4">Choose additional restore options.</p>
+                    
+                    <div className="space-y-2 mb-6 text-sm">
+                        <div className="flex gap-2 items-center">
+                            <input type="checkbox" id="format" disabled checked className="w-4 h-4" />
+                            <label htmlFor="format" className="text-gray-500">Format and repartition disks</label>
+                        </div>
+                        <p className="ml-6 text-xs text-gray-500 mb-4">You can exclude disks from being formatted or repartitioned.</p>
+                        
+                        <button className="px-4 py-1 border border-gray-300 bg-gray-50 text-gray-400 text-xs">Exclude disks...</button>
+                        <div className="h-4"></div>
+                        <button className="px-4 py-1 border border-gray-300 bg-gray-50 text-gray-400 text-xs">Advanced...</button>
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                        <button onClick={() => setStep('select')} className="px-4 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">&lt; Back</button>
+                        <button onClick={() => setStep('confirm')} className="px-4 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Next &gt;</button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (step === 'confirm') {
+        return (
+            <div className="w-full h-full bg-[#0078D7] flex items-center justify-center animate-in fade-in p-4">
+                <div className="bg-white border border-[#1883D7] shadow-xl p-4 w-[500px] text-gray-900">
+                    <div className="flex items-center gap-4 mb-6">
+                        <AlertTriangle className="text-yellow-500" size={32} />
+                        <p className="text-sm">Your computer will be restored from the following system image:</p>
+                    </div>
+                    
+                    <div className="bg-gray-100 border border-gray-300 p-2 text-sm mb-6">
+                        <div><b>Date:</b> 01/01/2025 12:00 PM</div>
+                        <div><b>Computer:</b> DESKTOP-WINSIM</div>
+                        <div><b>Drives to restore:</b> C:, EFI System Partition, Recovery</div>
+                    </div>
+
+                    <p className="text-xs text-red-600 mb-6">All data on the drives to be restored will be replaced with the data in the system image.</p>
+
+                    <div className="flex justify-end gap-2">
+                        <button onClick={() => setStep('options')} className="px-4 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Cancel</button>
+                        <button onClick={() => setStep('restoring')} className="px-4 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Finish</button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (step === 'restoring') {
+        return (
+            <div className="w-full h-full bg-white border border-[#1883D7] shadow-xl p-6 flex flex-col max-w-lg mx-auto self-center mt-32 text-gray-900">
+                <h3 className="text-lg text-[#0078D7] mb-4">Re-image your computer</h3>
+                <p className="mb-2 text-sm">Restoring disk (C:)...</p>
+                <div className="w-full h-4 bg-gray-200 border border-gray-400 mb-2">
+                    <div className="h-full bg-green-500" style={{width: `${progress}%`}}></div>
+                </div>
+                <p className="text-xs text-gray-500 text-center">This might take from a few minutes to a few hours.</p>
+            </div>
+        );
+    }
+
+    if (step === 'finished') {
+        return (
+            <div className="w-full h-full bg-[#0078D7] flex items-center justify-center animate-in fade-in p-4">
+                <div className="bg-white border border-[#1883D7] shadow-xl p-4 w-[400px] text-gray-900">
+                    <h3 className="text-lg text-[#0078D7] mb-4">Re-image your computer</h3>
+                    <p className="text-sm mb-6">The restore operation completed successfully.</p>
+                    <div className="flex justify-end">
+                        <button onClick={() => window.location.reload()} className="px-4 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Restart now</button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return null;
 };
 
 // --- Product Key, License, etc (Existing) ---
@@ -1294,6 +1414,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ state, onNext }) => {
             return <UninstallUpdatesProgress onComplete={() => onNext(InstallState.RECOVERY_UNINSTALL_UPDATES)} />;
         case InstallState.RECOVERY_IMAGE_RECOVERY:
             return <SystemImageRecoveryStep onBack={() => onNext(InstallState.RECOVERY_ADVANCED)} />;
+        case InstallState.RECOVERY_UEFI_CONFIRM:
+            return <UefiSettingsConfirm onNext={onNext} />;
 
         default:
             return null;
