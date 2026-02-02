@@ -4,7 +4,7 @@ import { InstallState, DEFAULT_TIPS } from '../../types';
 import { generateInstallationTips } from '../../services/geminiService';
 import { 
     ArrowRight, HardDrive, RefreshCw, Plus, X as XIcon, AlertTriangle, Info, 
-    Power, RotateCcw, Wrench, Terminal, Settings, Disc, History, Undo2, ArrowLeft, Loader2, Check, Cloud, Monitor, Trash2, Clock
+    Power, RotateCcw, Wrench, Terminal, Settings, Disc, History, Undo2, ArrowLeft, Loader2, Check, Cloud, Monitor, Trash2, Clock, Globe
 } from 'lucide-react';
 import { playSound } from '../../services/soundService';
 
@@ -243,7 +243,7 @@ const RecoveryChooseOption = ({ onNext }: { onNext: (state: InstallState) => voi
                     icon={<Disc size={24}/>} 
                     title="Use a device" 
                     desc="Use a USB drive, network connection, or Windows recovery DVD" 
-                    onClick={() => {}} // Placeholder
+                    onClick={() => onNext(InstallState.RECOVERY_USE_DEVICE)}
                  />
                  <RecoveryOptionTile 
                     icon={<Wrench size={24}/>} 
@@ -260,6 +260,29 @@ const RecoveryChooseOption = ({ onNext }: { onNext: (state: InstallState) => voi
         </RecoveryLayout>
     );
 };
+
+// 1b. Use a Device
+const RecoveryUseDevice = ({ onNext }: { onNext: (state: InstallState) => void }) => (
+    <RecoveryLayout title="Use a device" onBack={() => onNext(InstallState.RECOVERY_CHOOSE_OPTION)}>
+        <div className="max-w-xl mx-auto space-y-4">
+            <RecoveryListButton 
+                title="EFI USB Device (WinSim USB)" 
+                desc="Removable Disk" 
+                onClick={() => window.location.reload()} 
+            />
+            <RecoveryListButton 
+                title="EFI Network (IPv4)" 
+                desc="PXE Network Boot" 
+                onClick={() => window.location.reload()} 
+            />
+            <RecoveryListButton 
+                title="EFI Network (IPv6)" 
+                desc="PXE Network Boot" 
+                onClick={() => window.location.reload()} 
+            />
+        </div>
+    </RecoveryLayout>
+);
 
 // 2. Troubleshoot
 const RecoveryTroubleshoot = ({ onNext }: { onNext: (state: InstallState) => void }) => {
@@ -551,27 +574,90 @@ const SystemRestoreStep = ({ onBack }: { onBack: () => void }) => {
     return null;
 };
 
-const UninstallUpdatesStep = ({ onBack }: { onBack: () => void }) => {
+const UninstallUpdatesStep = ({ onNext, onBack }: { onNext: (state: InstallState) => void, onBack: () => void }) => {
     return (
         <RecoveryLayout title="Uninstall Updates" onBack={onBack}>
             <div className="max-w-xl mx-auto space-y-4">
                 <RecoveryListButton 
                     title="Uninstall latest quality update" 
                     desc="Uninstall the latest monthly quality update." 
-                    onClick={() => alert("Simulated: Quality update uninstalled.")}
+                    onClick={() => onNext(InstallState.RECOVERY_UNINSTALL_QUALITY_CONFIRM)}
                 />
                 <RecoveryListButton 
                     title="Uninstall latest feature update" 
                     desc="Uninstall the latest feature update." 
-                    onClick={() => alert("Simulated: Feature update uninstalled.")}
+                    onClick={() => onNext(InstallState.RECOVERY_UNINSTALL_FEATURE_CONFIRM)}
                 />
             </div>
         </RecoveryLayout>
     );
 };
 
+const UninstallUpdatesConfirm = ({ type, onNext, onBack }: { type: 'quality'|'feature', onNext: () => void, onBack: () => void }) => {
+    return (
+        <RecoveryLayout title={`Uninstall latest ${type} update`} onBack={onBack}>
+            <div className="max-w-2xl mx-auto">
+                <div className="bg-black/20 p-6 mb-8 text-sm space-y-4">
+                    <h3 className="font-semibold text-lg">Uninstall latest {type} update</h3>
+                    <p>{type === 'quality' 
+                        ? "Uninstalling the latest quality update might fix recent issues. You won't be able to use Windows while this is happening."
+                        : "Uninstalling the latest feature update might take a while. You won't be able to use Windows while this is happening."}
+                    </p>
+                    <div className="mt-4 font-semibold text-sm">User: WinSim User</div>
+                </div>
+                <div className="flex justify-end gap-4">
+                    <button onClick={onBack} className="px-6 py-2 border border-white/30 hover:bg-white/10">Cancel</button>
+                    <button onClick={onNext} className="px-6 py-2 bg-white text-[#0078D7] hover:bg-gray-100 font-semibold shadow-lg">Uninstall {type} update</button>
+                </div>
+            </div>
+        </RecoveryLayout>
+    );
+}
+
+const UninstallUpdatesProgress = ({ onComplete }: { onComplete: () => void }) => {
+    const [progress, setProgress] = useState(0);
+    const [finished, setFinished] = useState(false);
+
+    useEffect(() => {
+        const t = setInterval(() => {
+            setProgress(prev => {
+                if (prev >= 100) {
+                    clearInterval(t);
+                    setFinished(true);
+                    return 100;
+                }
+                return prev + 0.8;
+            });
+        }, 100);
+        return () => clearInterval(t);
+    }, []);
+
+    if (finished) {
+        return (
+            <div className="w-full h-full bg-[#0078D7] flex flex-col items-center justify-center animate-in fade-in p-8">
+                <div className="bg-white text-black p-6 max-w-md shadow-xl border-2 border-white">
+                    <h2 className="text-xl mb-4 text-[#0078D7]">Uninstall Updates</h2>
+                    <p className="mb-6 text-sm">The update was successfully uninstalled.</p>
+                    <div className="flex justify-end">
+                        <button onClick={() => window.location.reload()} className="px-6 py-1 border border-gray-400 hover:bg-gray-100">Done</button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="w-full h-full bg-black text-white flex flex-col items-center justify-center p-8">
+            <Loader2 className="animate-spin mb-8 text-white/80" size={48}/>
+            <div className="text-2xl font-light mb-2">Uninstalling update...</div>
+            <div className="text-gray-400">This might take a few minutes.</div>
+        </div>
+    )
+}
+
 const SystemImageRecoveryStep = ({ onBack }: { onBack: () => void }) => {
     const [scanning, setScanning] = useState(true);
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     useEffect(() => {
         const t = setTimeout(() => setScanning(false), 3000);
@@ -590,17 +676,34 @@ const SystemImageRecoveryStep = ({ onBack }: { onBack: () => void }) => {
     }
 
     return (
-        <div className="w-full h-full bg-[#0078D7] flex items-center justify-center animate-in fade-in">
-            <div className="bg-white border border-[#1883D7] shadow-xl p-4 w-[500px]">
+        <div className="w-full h-full bg-[#0078D7] flex items-center justify-center animate-in fade-in p-4" onClick={() => setShowAdvanced(false)}>
+            <div className="bg-white border border-[#1883D7] shadow-xl p-4 w-[500px] relative" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center gap-2 mb-4 text-[#0078D7]">
                     <Info size={24}/>
                     <h3 className="text-lg">Re-image your computer</h3>
                 </div>
                 <p className="text-sm text-gray-800 mb-6">Windows cannot find a system image on this computer.</p>
                 <p className="text-sm text-gray-800 mb-6">Attach the backup hard disk or insert the final DVD from a backup set and click Retry. Alternatively, close this dialog for more options.</p>
-                <div className="flex justify-end gap-2">
-                    <button onClick={onBack} className="px-6 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Cancel</button>
-                    <button onClick={() => setScanning(true)} className="px-6 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Retry</button>
+                
+                <div className="flex justify-between items-center">
+                    <div className="relative">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setShowAdvanced(!showAdvanced); }}
+                            className="px-4 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm"
+                        >
+                            Advanced...
+                        </button>
+                        {showAdvanced && (
+                            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-400 shadow-lg w-64 z-10 text-sm">
+                                <button className="block w-full text-left px-4 py-2 hover:bg-[#0078D7] hover:text-white" onClick={() => alert("Search not implemented in simulator.")}>Search for a system image on the network</button>
+                                <button className="block w-full text-left px-4 py-2 hover:bg-[#0078D7] hover:text-white" onClick={() => alert("Install driver not implemented in simulator.")}>Install a driver</button>
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={onBack} className="px-6 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Cancel</button>
+                        <button onClick={() => setScanning(true)} className="px-6 py-1 border border-gray-400 bg-gray-100 hover:bg-gray-200 text-sm">Retry</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1159,6 +1262,8 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ state, onNext }) => {
         // RECOVERY ROUTES
         case InstallState.RECOVERY_CHOOSE_OPTION:
             return <RecoveryChooseOption onNext={onNext} />;
+        case InstallState.RECOVERY_USE_DEVICE:
+            return <RecoveryUseDevice onNext={onNext} />;
         case InstallState.RECOVERY_TROUBLESHOOT:
             return <RecoveryTroubleshoot onNext={onNext} />;
         case InstallState.RECOVERY_ADVANCED:
@@ -1180,7 +1285,13 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({ state, onNext }) => {
         case InstallState.RECOVERY_SYSTEM_RESTORE:
             return <SystemRestoreStep onBack={() => onNext(InstallState.RECOVERY_ADVANCED)} />;
         case InstallState.RECOVERY_UNINSTALL_UPDATES:
-            return <UninstallUpdatesStep onBack={() => onNext(InstallState.RECOVERY_ADVANCED)} />;
+            return <UninstallUpdatesStep onNext={onNext} onBack={() => onNext(InstallState.RECOVERY_ADVANCED)} />;
+        case InstallState.RECOVERY_UNINSTALL_QUALITY_CONFIRM:
+            return <UninstallUpdatesConfirm type="quality" onNext={() => onNext(InstallState.RECOVERY_UNINSTALL_PROGRESS)} onBack={() => onNext(InstallState.RECOVERY_UNINSTALL_UPDATES)} />;
+        case InstallState.RECOVERY_UNINSTALL_FEATURE_CONFIRM:
+            return <UninstallUpdatesConfirm type="feature" onNext={() => onNext(InstallState.RECOVERY_UNINSTALL_PROGRESS)} onBack={() => onNext(InstallState.RECOVERY_UNINSTALL_UPDATES)} />;
+        case InstallState.RECOVERY_UNINSTALL_PROGRESS:
+            return <UninstallUpdatesProgress onComplete={() => onNext(InstallState.RECOVERY_UNINSTALL_UPDATES)} />;
         case InstallState.RECOVERY_IMAGE_RECOVERY:
             return <SystemImageRecoveryStep onBack={() => onNext(InstallState.RECOVERY_ADVANCED)} />;
 
