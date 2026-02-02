@@ -5,14 +5,16 @@ import { Bios } from './components/screens/Bios';
 import { SetupWizard } from './components/screens/SetupWizard';
 import { OOBE } from './components/screens/OOBE';
 import { Desktop } from './components/screens/Desktop';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Power, Maximize2 } from 'lucide-react';
+import { playSound } from './services/soundService';
 
 const App: React.FC = () => {
+  // Simulation State
+  const [hasStarted, setHasStarted] = useState(false);
   const [currentState, setCurrentState] = useState<InstallState>(InstallState.MEDIA_CREATOR);
   const [userData, setUserData] = useState<{username: string}>({ username: "User" });
   const [bootError, setBootError] = useState<string | null>(null);
 
-  // Simulation State
   const [mediaConfig, setMediaConfig] = useState<MediaConfig | null>(null);
   const [biosConfig, setBiosConfig] = useState<BiosConfig>({
     bootMode: 'UEFI',
@@ -20,6 +22,22 @@ const App: React.FC = () => {
     usbBootEnabled: true,
     bootOrder: ['USB', 'HDD']
   });
+
+  // --- Full Screen / Start Logic ---
+
+  const handlePowerOn = async () => {
+    try {
+        if (!document.fullscreenElement) {
+            await document.documentElement.requestFullscreen();
+        }
+    } catch (err) {
+        console.error("Error attempting to enable full-screen mode:", err);
+    }
+    
+    // Resume audio context if it was suspended (browser policy)
+    playSound('click');
+    setHasStarted(true);
+  };
 
   // --- Logic Engine ---
 
@@ -63,6 +81,32 @@ const App: React.FC = () => {
   };
 
   // --- Render Steps ---
+
+  // 0. Power On Screen (Landing Page)
+  if (!hasStarted) {
+      return (
+          <div className="w-full h-full bg-[#111] flex flex-col items-center justify-center text-gray-300 font-sans select-none">
+              <div className="mb-8 relative group cursor-pointer" onClick={handlePowerOn}>
+                  <div className="w-24 h-24 rounded-full border-4 border-gray-600 flex items-center justify-center group-hover:border-blue-500 group-hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all duration-500 bg-[#1a1a1a]">
+                      <Power size={48} className="text-gray-500 group-hover:text-blue-400 transition-colors duration-500" />
+                  </div>
+              </div>
+              <h1 className="text-2xl font-light tracking-widest uppercase mb-2">WinSim</h1>
+              <p className="text-sm text-gray-500 mb-8">OS Installation Simulator</p>
+              
+              <button 
+                onClick={handlePowerOn}
+                className="flex items-center gap-2 px-6 py-2 border border-gray-700 hover:border-blue-500 hover:bg-blue-500/10 hover:text-blue-400 rounded-full transition-all text-sm uppercase tracking-wider"
+              >
+                  <Maximize2 size={16} /> Power On System
+              </button>
+              
+              <div className="absolute bottom-8 text-xs text-gray-700 max-w-md text-center">
+                  For the best experience, this simulator requires Full Screen mode and Sound enabled.
+              </div>
+          </div>
+      )
+  }
 
   // 1. Media Creator (The "Host" PC)
   if (currentState === InstallState.MEDIA_CREATOR) {

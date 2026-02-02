@@ -13,6 +13,8 @@ export const OOBE: React.FC<OOBEProps> = ({ state, onNext }) => {
     const [password, setPassword] = useState("");
     const [connectingWifi, setConnectingWifi] = useState<string | null>(null);
     const [showLimitedSetup, setShowLimitedSetup] = useState(false);
+    const [wifiPassword, setWifiPassword] = useState("");
+    const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null);
 
     // -- Region --
     if (state === InstallState.OOBE_REGION) {
@@ -87,6 +89,25 @@ export const OOBE: React.FC<OOBEProps> = ({ state, onNext }) => {
 
     // -- Network --
     if (state === InstallState.OOBE_NETWORK) {
+        const handleNetworkClick = (ssid: string, secure: boolean) => {
+            playSound('click');
+            if (secure) {
+                setSelectedNetwork(ssid);
+                setWifiPassword("");
+            } else {
+                connect(ssid);
+            }
+        };
+
+        const connect = (ssid: string) => {
+             setSelectedNetwork(null);
+             setConnectingWifi(ssid);
+             setTimeout(() => {
+                setConnectingWifi(null);
+                onNext(InstallState.OOBE_UPDATES);
+             }, 3000);
+        };
+
         if (showLimitedSetup) {
              return (
                 <div className="w-full h-full bg-[#004275] text-white flex flex-col items-center justify-center p-8 overflow-hidden relative">
@@ -123,6 +144,32 @@ export const OOBE: React.FC<OOBEProps> = ({ state, onNext }) => {
             <div className="w-full h-full bg-[#004275] text-white flex flex-col items-center justify-center p-8 overflow-hidden relative">
                  <div className="absolute top-0 right-0 w-1/2 h-full bg-white opacity-5 transform skew-x-12 translate-x-20"></div>
 
+                 {selectedNetwork && (
+                     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in">
+                         <div className="bg-[#003055] p-6 rounded-lg shadow-xl w-96 border border-white/10">
+                             <h3 className="text-xl mb-4 font-light">{selectedNetwork}</h3>
+                             <p className="mb-2 text-sm text-gray-300">Enter the network security key</p>
+                             <input 
+                                type="password" 
+                                autoFocus
+                                value={wifiPassword}
+                                onChange={(e) => setWifiPassword(e.target.value)}
+                                className="w-full bg-white/10 border border-white/30 p-2 mb-4 focus:outline-none focus:border-blue-400"
+                             />
+                             <div className="flex justify-end gap-2">
+                                 <button onClick={() => setSelectedNetwork(null)} className="px-4 py-1.5 border border-white/30 hover:bg-white/10">Cancel</button>
+                                 <button 
+                                    onClick={() => connect(selectedNetwork)} 
+                                    disabled={wifiPassword.length < 4}
+                                    className="px-4 py-1.5 bg-[#0078D7] hover:bg-[#006CC1] disabled:opacity-50"
+                                 >
+                                     Next
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
+                 )}
+
                  <div className="z-10 max-w-2xl w-full flex gap-12">
                     <div className="w-1/2">
                         <h1 className="text-4xl font-light mb-4">Let's connect you to a network</h1>
@@ -133,28 +180,24 @@ export const OOBE: React.FC<OOBEProps> = ({ state, onNext }) => {
                     <div className="w-1/2 h-96 flex flex-col">
                         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
                              {[
-                                 {ssid: 'Home WiFi 5G', strength: 4},
-                                 {ssid: 'Neighbor_Network', strength: 2},
-                                 {ssid: 'CoffeeShop_Guest', strength: 3},
-                                 {ssid: 'Hidden Network', strength: 0}
+                                 {ssid: 'Home WiFi 5G', strength: 4, secure: true},
+                                 {ssid: 'Neighbor_Network', strength: 2, secure: true},
+                                 {ssid: 'CoffeeShop_Guest', strength: 3, secure: false},
+                                 {ssid: 'Hidden Network', strength: 0, secure: true}
                              ].map((net, i) => (
                                  <button 
                                     key={i} 
-                                    onClick={() => {
-                                        playSound('click');
-                                        setConnectingWifi(net.ssid);
-                                        setTimeout(() => {
-                                            setConnectingWifi(null);
-                                            onNext(InstallState.OOBE_UPDATES);
-                                        }, 2000);
-                                    }}
+                                    onClick={() => handleNetworkClick(net.ssid, net.secure)}
                                     className="w-full text-left p-4 hover:bg-white/10 transition-colors flex items-center justify-between group"
                                  >
                                     <div className="flex items-center gap-4">
                                         <Wifi size={20}/>
                                         <span className="text-lg">{net.ssid}</span>
                                     </div>
-                                    {connectingWifi === net.ssid && <Loader2 className="animate-spin" size={16}/>}
+                                    <div className="flex items-center gap-2">
+                                        {net.secure && <Lock size={14} className="text-gray-400"/>}
+                                        {connectingWifi === net.ssid && <Loader2 className="animate-spin" size={16}/>}
+                                    </div>
                                  </button>
                              ))}
                         </div>

@@ -28,6 +28,14 @@ export const Bios: React.FC<BiosProps> = ({ onSaveAndExit, initialConfig }) => {
       playSound('bios-beep'); // Beep on every interaction
       
       switch(e.key) {
+        case 'Tab':
+          if (e.shiftKey) {
+            setActiveTab(prev => (prev - 1 + tabs.length) % tabs.length);
+          } else {
+            setActiveTab(prev => (prev + 1) % tabs.length);
+          }
+          setSelectedRow(0);
+          break;
         case 'ArrowRight':
           setActiveTab(prev => (prev + 1) % tabs.length);
           setSelectedRow(0);
@@ -211,7 +219,7 @@ export const Bios: React.FC<BiosProps> = ({ onSaveAndExit, initialConfig }) => {
         <div>
            <span className="mr-4">F1: Help</span>
            <span className="mr-4">↑↓: Select Item</span>
-           <span className="mr-4">←→: Select Menu</span>
+           <span className="mr-4">←→/Tab: Select Menu</span>
         </div>
         <div>
            <span className="mr-4">+/-: Change Values</span>

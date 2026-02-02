@@ -3,7 +3,8 @@ import {
     Monitor, Wifi, Volume2, Battery, Search, X, Minus, Square, Settings, 
     Image as ImageIcon, Calculator, FileText, Power, Calendar as CalendarIcon, 
     ChevronUp, Bell, Code, Info, Moon, RefreshCcw, Folder, Terminal, ArrowLeft, 
-    HardDrive, Activity, Palette, Play, Cpu, Layers, Database, ChevronRight, ChevronDown, Trash2
+    HardDrive, Activity, Palette, Play, Cpu, Layers, Database, ChevronRight, ChevronDown, Trash2,
+    Bluetooth, Plane, Sun, Accessibility, BatteryCharging, Gamepad2, Flag, Smile, Bomb
 } from 'lucide-react';
 import { generateWelcomeMessage } from '../../services/geminiService';
 import { playSound } from '../../services/soundService';
@@ -29,6 +30,212 @@ interface DesktopWindow {
 }
 
 // --- APP COMPONENTS ---
+
+const MinesweeperApp = () => {
+    const ROWS = 9;
+    const COLS = 9;
+    const MINES = 10;
+    
+    interface Cell {
+        r: number;
+        c: number;
+        isMine: boolean;
+        isOpen: boolean;
+        isFlagged: boolean;
+        count: number;
+    }
+
+    const [grid, setGrid] = useState<Cell[]>([]);
+    const [gameOver, setGameOver] = useState(false);
+    const [win, setWin] = useState(false);
+    const [initialized, setInitialized] = useState(false);
+
+    const initGame = () => {
+        const newGrid: Cell[] = [];
+        for(let r=0; r<ROWS; r++){
+            for(let c=0; c<COLS; c++){
+                newGrid.push({ r, c, isMine: false, isOpen: false, isFlagged: false, count: 0 });
+            }
+        }
+        
+        // Place mines randomly
+        let minesPlaced = 0;
+        while(minesPlaced < MINES) {
+            const idx = Math.floor(Math.random() * newGrid.length);
+            if(!newGrid[idx].isMine) {
+                newGrid[idx].isMine = true;
+                minesPlaced++;
+            }
+        }
+
+        // Calculate counts
+        for(let i=0; i<newGrid.length; i++) {
+            if(newGrid[i].isMine) continue;
+            const {r, c} = newGrid[i];
+            let count = 0;
+            for(let dr=-1; dr<=1; dr++) {
+                for(let dc=-1; dc<=1; dc++) {
+                    const nr = r+dr;
+                    const nc = c+dc;
+                    if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS) {
+                        const neighbor = newGrid.find(cell => cell.r === nr && cell.c === nc);
+                        if(neighbor?.isMine) count++;
+                    }
+                }
+            }
+            newGrid[i].count = count;
+        }
+
+        setGrid(newGrid);
+        setGameOver(false);
+        setWin(false);
+        setInitialized(true);
+    };
+
+    useEffect(() => { initGame(); }, []);
+
+    const handleClick = (idx: number) => {
+        if(gameOver || win || grid[idx].isFlagged || grid[idx].isOpen) return;
+        
+        const newGrid = [...grid];
+        const cell = newGrid[idx];
+
+        if(cell.isMine) {
+            cell.isOpen = true;
+            setGrid(newGrid);
+            setGameOver(true);
+            playSound('error');
+            return;
+        }
+
+        const openCell = (index: number) => {
+            if(newGrid[index].isOpen || newGrid[index].isFlagged) return;
+            newGrid[index].isOpen = true;
+            if(newGrid[index].count === 0) {
+                // Flood fill
+                const {r, c} = newGrid[index];
+                for(let dr=-1; dr<=1; dr++) {
+                    for(let dc=-1; dc<=1; dc++) {
+                        const nr = r+dr;
+                        const nc = c+dc;
+                        if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS) {
+                             const neighborIdx = newGrid.findIndex(n => n.r === nr && n.c === nc);
+                             if(neighborIdx !== -1) openCell(neighborIdx);
+                        }
+                    }
+                }
+            }
+        };
+
+        openCell(idx);
+        setGrid(newGrid);
+
+        // Check win
+        if(newGrid.filter(c => !c.isMine && c.isOpen).length === (ROWS*COLS - MINES)) {
+            setWin(true);
+            playSound('notification');
+        }
+    };
+
+    const handleRightClick = (e: React.MouseEvent, idx: number) => {
+        e.preventDefault();
+        if(gameOver || win || grid[idx].isOpen) return;
+        const newGrid = [...grid];
+        newGrid[idx].isFlagged = !newGrid[idx].isFlagged;
+        setGrid(newGrid);
+    };
+
+    return (
+        <div className="h-full bg-[#C0C0C0] p-1 border-t-2 border-l-2 border-white border-b-2 border-r-2 border-gray-500 flex flex-col items-center">
+            <div className="w-full flex justify-between items-center bg-[#C0C0C0] border-2 border-gray-400 p-1 mb-2">
+                <div className="bg-black text-red-500 font-mono text-xl px-1 border border-gray-500 w-12 text-center">
+                    {Math.max(0, MINES - grid.filter(c => c.isFlagged).length).toString().padStart(3, '0')}
+                </div>
+                <button onClick={initGame} className="w-8 h-8 border-2 border-gray-400 active:border-gray-500 bg-[#C0C0C0] flex items-center justify-center">
+                    {gameOver ? <span className="text-xl">😵</span> : (win ? <span className="text-xl">😎</span> : <Smile size={20} className="text-yellow-600 fill-yellow-300"/>)}
+                </button>
+                <div className="bg-black text-red-500 font-mono text-xl px-1 border border-gray-500 w-12 text-center">
+                    000
+                </div>
+            </div>
+
+            <div className="grid grid-cols-9 border-4 border-gray-400">
+                {grid.map((cell, i) => (
+                    <div 
+                        key={i}
+                        onClick={() => handleClick(i)}
+                        onContextMenu={(e) => handleRightClick(e, i)}
+                        className={`w-6 h-6 border flex items-center justify-center text-xs font-bold cursor-pointer select-none
+                            ${cell.isOpen 
+                                ? 'bg-[#C0C0C0] border-gray-400 border-[0.5px]' 
+                                : 'bg-[#C0C0C0] border-t-white border-l-white border-b-gray-500 border-r-gray-500 border-2 active:border-none'
+                            }`}
+                    >
+                        {cell.isOpen && !cell.isMine && cell.count > 0 && <span style={{color: ['blue','green','red','darkblue','darkred','teal','black','gray'][cell.count-1]}}>{cell.count}</span>}
+                        {cell.isOpen && cell.isMine && <Bomb size={14}/>}
+                        {!cell.isOpen && cell.isFlagged && <Flag size={14} className="text-red-600 fill-red-600"/>}
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+};
+
+const QuickSettings = ({ isDark, setIsDark, bgImage }: { isDark: boolean, setIsDark: (v: boolean) => void, bgImage: string }) => {
+    const [vol, setVol] = useState(80);
+    const [bri, setBri] = useState(100);
+    const [wifi, setWifi] = useState(true);
+    const [bt, setBt] = useState(true);
+    const [plane, setPlane] = useState(false);
+
+    const toggleClass = (active: boolean) => active ? (isDark ? 'bg-blue-500 text-white' : 'bg-blue-500 text-white') : (isDark ? 'bg-[#333] text-gray-300' : 'bg-gray-200 text-gray-700');
+
+    return (
+        <div className={`absolute bottom-12 right-2 w-80 p-4 rounded-xl shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-5 border z-[10000] ${isDark ? 'bg-[#202020]/90 border-[#333] text-white' : 'bg-[#F3F3F3]/90 border-gray-300 text-black'}`} onClick={e => e.stopPropagation()}>
+             <div className="grid grid-cols-3 gap-3 mb-6">
+                 <button onClick={() => setWifi(!wifi)} className={`h-20 rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${toggleClass(wifi)}`}>
+                     <Wifi size={20}/> <span className="text-xs font-semibold">Wi-Fi</span>
+                 </button>
+                 <button onClick={() => setBt(!bt)} className={`h-20 rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${toggleClass(bt)}`}>
+                     <Bluetooth size={20}/> <span className="text-xs font-semibold">Bluetooth</span>
+                 </button>
+                 <button onClick={() => setPlane(!plane)} className={`h-20 rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${toggleClass(plane)}`}>
+                     <Plane size={20}/> <span className="text-xs font-semibold">Airplane</span>
+                 </button>
+                 <button onClick={() => setIsDark(!isDark)} className={`h-20 rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${toggleClass(isDark)}`}>
+                     <Moon size={20}/> <span className="text-xs font-semibold">Dark Mode</span>
+                 </button>
+                 <button className={`h-20 rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${toggleClass(false)}`}>
+                     <BatteryCharging size={20}/> <span className="text-xs font-semibold">Saver</span>
+                 </button>
+                 <button className={`h-20 rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${toggleClass(false)}`}>
+                     <Accessibility size={20}/> <span className="text-xs font-semibold">Access</span>
+                 </button>
+             </div>
+
+             <div className="space-y-4 mb-4">
+                 <div className="flex items-center gap-3">
+                     <Sun size={18} className="text-gray-500"/>
+                     <input type="range" min="0" max="100" value={bri} onChange={e => setBri(Number(e.target.value))} className="flex-1 accent-blue-500 h-1 bg-gray-300 rounded-full appearance-none"/>
+                 </div>
+                 <div className="flex items-center gap-3">
+                     <Volume2 size={18} className="text-gray-500"/>
+                     <input type="range" min="0" max="100" value={vol} onChange={e => setVol(Number(e.target.value))} className="flex-1 accent-blue-500 h-1 bg-gray-300 rounded-full appearance-none"/>
+                 </div>
+             </div>
+
+             <div className={`pt-3 border-t flex justify-between items-center ${isDark ? 'border-[#444]' : 'border-gray-200'}`}>
+                 <div className="text-xs text-gray-500 flex items-center gap-1">
+                     <Battery size={14}/> 84%
+                 </div>
+                 <Settings size={16} className="text-gray-500 cursor-pointer hover:rotate-90 transition-transform"/>
+             </div>
+        </div>
+    );
+};
+
+// ... (Other apps: BrowserApp, RegEditApp, NotepadApp, PaintApp, TaskManagerApp, CalculatorApp, SettingsApp, TerminalApp, ExplorerApp, RunDialog - KEPT AS IS)
+// Re-implementing existing apps for file completeness
 
 const BrowserApp = () => {
     const [url, setUrl] = useState("https://www.bing.com");
@@ -772,6 +979,7 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
     const [welcomeMsg, setWelcomeMsg] = useState("");
     const [startMenuOpen, setStartMenuOpen] = useState(false);
     const [calendarOpen, setCalendarOpen] = useState(false);
+    const [quickSettingsOpen, setQuickSettingsOpen] = useState(false);
     const [time, setTime] = useState(new Date());
     const [windows, setWindows] = useState<DesktopWindow[]>([]);
     const [bgImage, setBgImage] = useState('https://picsum.photos/1920/1080');
@@ -795,6 +1003,7 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
             setContextMenu(null);
             setStartMenuOpen(false);
             setCalendarOpen(false);
+            setQuickSettingsOpen(false);
         };
 
         const handleGlobalKey = (e: KeyboardEvent) => {
@@ -814,12 +1023,17 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
         };
     }, [username]);
 
-    // BSOD Effect
+    // BSOD Effect with Key interaction
     useEffect(() => {
         if (bsod) {
             playSound('error');
-            const t = setTimeout(onRestart, 5000);
-            return () => clearTimeout(t);
+            const handleRestartKey = () => onRestart();
+            window.addEventListener('keydown', handleRestartKey);
+            window.addEventListener('click', handleRestartKey);
+            return () => {
+                window.removeEventListener('keydown', handleRestartKey);
+                window.removeEventListener('click', handleRestartKey);
+            };
         }
     }, [bsod, onRestart]);
 
@@ -880,6 +1094,7 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
     const launchPaint = () => openWindow('paint', 'Paint', <Palette size={18} className="text-purple-500"/>, <PaintApp/>, 800, 600);
     const launchTaskMgr = () => openWindow('taskmgr', 'Task Manager', <Activity size={18} className="text-green-600"/>, <TaskManagerApp openWindows={windows} onCloseWindow={closeWindow} onBsod={() => setBsod(true)}/>, 600, 450);
     const launchRegEdit = () => openWindow('regedit', 'Registry Editor', <Database size={18} className="text-blue-400"/>, <RegEditApp />, 800, 500);
+    const launchMinesweeper = () => openWindow('minesweeper', 'Minesweeper', <Bomb size={18} className="text-black"/>, <MinesweeperApp />, 300, 360);
 
     const launchEdge = () => openWindow('edge', 'Microsoft Edge', <div className="font-bold text-blue-500">e</div>, <BrowserApp/>, 1000, 600);
     
@@ -913,6 +1128,7 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
         else if (c === 'taskmgr') launchTaskMgr();
         else if (c === 'explorer') launchExplorer();
         else if (c === 'regedit') launchRegEdit();
+        else if (c === 'minesweeper' || c === 'winmine') launchMinesweeper();
         else if (c === 'winver') {
             openWindow('winver', 'About Windows', <Info size={18} className="text-blue-500"/>, (
                 <div className="p-8 bg-white h-full flex flex-col gap-4">
@@ -942,6 +1158,8 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
                         If you call a support person, give them this info:
                         <br/>
                         Stop code: CRITICAL_PROCESS_DIED
+                        <br/><br/>
+                        <span className="animate-pulse font-bold">Press any key to restart...</span>
                     </div>
                 </div>
             </div>
@@ -992,6 +1210,11 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
                  <div onClick={launchVSCode} className="flex flex-col items-center group cursor-pointer p-2 hover:bg-white/10 rounded border border-transparent hover:border-white/10 w-24">
                     <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white drop-shadow-md"><Code size={20}/></div>
                     <span className="text-white text-xs mt-1 text-center drop-shadow-md text-shadow">VS Code</span>
+                </div>
+                
+                <div onClick={launchMinesweeper} className="flex flex-col items-center group cursor-pointer p-2 hover:bg-white/10 rounded border border-transparent hover:border-white/10 w-24">
+                    <div className="w-8 h-8 bg-white border border-gray-400 rounded flex items-center justify-center text-white drop-shadow-md"><Bomb size={24} className="text-black"/></div>
+                    <span className="text-white text-xs mt-1 text-center drop-shadow-md text-shadow">Minesweeper</span>
                 </div>
             </div>
 
@@ -1114,6 +1337,10 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
                                      <div className="w-10 h-10 bg-blue-600 text-white rounded flex items-center justify-center"><Code/></div>
                                      <div className="text-[11px]">VS Code</div>
                                  </div>
+                                 <div onClick={launchMinesweeper} className={`flex flex-col items-center gap-2 p-2 rounded cursor-pointer transition-colors ${itemHoverClass}`}>
+                                     <div className="w-10 h-10 bg-white border border-gray-300 rounded flex items-center justify-center"><Bomb size={20} className="text-black"/></div>
+                                     <div className="text-[11px]">Minesweeper</div>
+                                 </div>
                              </div>
                          </div>
                          <div className={`w-1/3 border-l pl-6 flex flex-col ${isDark ? 'border-[#444]' : ''}`}>
@@ -1180,11 +1407,14 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
                 </div>
             )}
 
+            {/* Quick Settings Flyout */}
+            {quickSettingsOpen && <QuickSettings isDark={isDark} setIsDark={(v) => setTheme(v ? 'dark' : 'light')} bgImage={bgImage} />}
+
             {/* Taskbar */}
             <div className={`absolute bottom-0 w-full h-12 backdrop-blur-md flex items-center justify-between px-4 z-[10001] border-t ${taskbarClass}`}>
                 <div className="flex items-center gap-2 h-full">
                     <button 
-                        onClick={(e) => { e.stopPropagation(); setStartMenuOpen(!startMenuOpen); setCalendarOpen(false); playSound('click'); }}
+                        onClick={(e) => { e.stopPropagation(); setStartMenuOpen(!startMenuOpen); setCalendarOpen(false); setQuickSettingsOpen(false); playSound('click'); }}
                         className={`h-9 w-9 rounded flex items-center justify-center transition-all hover:shadow-sm active:scale-95 group ${itemHoverClass}`}>
                         <div className="grid grid-cols-2 gap-[2px] transition-transform group-hover:gap-[3px]">
                             <div className="w-2 h-2 bg-blue-500 rounded-[1px]"></div>
@@ -1222,13 +1452,20 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
 
                 <div className={`flex items-center gap-2 h-full ${isDark ? 'text-gray-300' : 'text-gray-800'}`}>
                     <div className={`p-1 rounded cursor-pointer ${itemHoverClass}`} onClick={() => playSound('click')}><ChevronUp size={16}/></div>
-                    <div className={`flex gap-2 px-2 py-1 rounded cursor-pointer ${itemHoverClass}`} onClick={() => playSound('click')}>
+                    <div className={`flex gap-2 px-2 py-1 rounded cursor-pointer ${itemHoverClass}`} 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setQuickSettingsOpen(!quickSettingsOpen);
+                            setCalendarOpen(false);
+                            setStartMenuOpen(false);
+                            playSound('click');
+                        }}>
                         <Wifi size={16}/>
                         <Volume2 size={16}/>
                         <Battery size={16}/>
                     </div>
                     <div 
-                        onClick={(e) => { e.stopPropagation(); setCalendarOpen(!calendarOpen); setStartMenuOpen(false); playSound('click'); }}
+                        onClick={(e) => { e.stopPropagation(); setCalendarOpen(!calendarOpen); setStartMenuOpen(false); setQuickSettingsOpen(false); playSound('click'); }}
                         className={`text-right px-2 py-1 rounded cursor-pointer transition-colors ${itemHoverClass}`}
                     >
                         <div className="text-xs leading-none mb-0.5">{time.toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'})}</div>
