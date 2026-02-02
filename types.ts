@@ -1,0 +1,55 @@
+export enum InstallState {
+  MEDIA_CREATOR = 'MEDIA_CREATOR',
+  BIOS_POST = 'BIOS_POST',
+  BIOS_SETUP = 'BIOS_SETUP',
+  BOOT_CHECK = 'BOOT_CHECK', // Logic step
+  BOOT_PROMPT = 'BOOT_PROMPT', // "Press any key..."
+  BOOT_ERROR = 'BOOT_ERROR',
+  BOOT_LOGO = 'BOOT_LOGO',
+  SETUP_LANGUAGE = 'SETUP_LANGUAGE',
+  SETUP_INSTALL_NOW = 'SETUP_INSTALL_NOW',
+  SETUP_KEY = 'SETUP_KEY',
+  SETUP_LICENSE = 'SETUP_LICENSE',
+  SETUP_TYPE = 'SETUP_TYPE',
+  SETUP_PARTITION = 'SETUP_PARTITION',
+  SETUP_COPYING = 'SETUP_COPYING',
+  REBOOT_REQUIRED = 'REBOOT_REQUIRED',
+  OOBE_REGION = 'OOBE_REGION',
+  OOBE_KEYBOARD = 'OOBE_KEYBOARD',
+  OOBE_NETWORK = 'OOBE_NETWORK',
+  OOBE_UPDATES = 'OOBE_UPDATES',
+  OOBE_USER = 'OOBE_USER',
+  OOBE_SECURITY_QUESTIONS = 'OOBE_SECURITY_QUESTIONS',
+  OOBE_JUST_A_MOMENT = 'OOBE_JUST_A_MOMENT',
+  OOBE_PIN = 'OOBE_PIN',
+  OOBE_PRIVACY = 'OOBE_PRIVACY',
+  GETTING_READY = 'GETTING_READY',
+  DRIVER_SETUP = 'DRIVER_SETUP',
+  DESKTOP = 'DESKTOP'
+}
+
+export type OsVersion = 'Windows 10' | 'Windows 11';
+export type PartitionScheme = 'MBR' | 'GPT';
+export type BootMode = 'Legacy' | 'UEFI';
+
+export interface MediaConfig {
+  osVersion: OsVersion;
+  partitionScheme: PartitionScheme;
+  label: string;
+  isCreated: boolean;
+}
+
+export interface BiosConfig {
+  bootMode: BootMode;
+  secureBoot: boolean;
+  usbBootEnabled: boolean;
+  bootOrder: string[]; // ['USB', 'HDD']
+}
+
+export const DEFAULT_TIPS = [
+  "WinSim is faster, safer, and more familiar than ever.",
+  "Your files are exactly where you left them.",
+  "Discover new ways to work and play.",
+  "Security is built-in, not bolted on.",
+  "Connecting to your world has never been easier."
+];

@@ -1,0 +1,5 @@
+{
+  "name": "WinSim: OS Installation Simulator",
+  "description": "A high-fidelity, web-based simulation of a modern Windows-like operating system installation process. Features dynamic installation tips powered by Gemini AI during the setup phase.",
+  "requestFramePermissions": []
+}
