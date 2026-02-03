@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { X, Minus, Square, Copy } from 'lucide-react';
 import { playSound } from '../../services/soundService';
+import { useSimulation } from '../../contexts/SimulationContext';
 
 interface WindowFrameProps {
   title: string;
   children: React.ReactNode;
   onClose?: () => void;
   className?: string;
+  autoHeight?: boolean;
 }
 
-export const WindowFrame: React.FC<WindowFrameProps> = ({ title, children, onClose, className = '' }) => {
+export const WindowFrame: React.FC<WindowFrameProps> = ({ title, children, onClose, className = '', autoHeight = false }) => {
   const [isMaximized, setIsMaximized] = useState(false);
 
   const toggleMaximize = () => {
@@ -17,9 +19,11 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ title, children, onClo
     setIsMaximized(!isMaximized);
   };
 
+  const heightClass = autoHeight ? 'h-auto' : 'h-[80vh] max-h-[600px]';
+
   const containerClass = isMaximized 
     ? 'fixed inset-0 w-full h-full z-[100] rounded-none' 
-    : `bg-[#EFEFEF] border border-[#1883D7] shadow-2xl w-full max-w-[800px] h-[80vh] max-h-[600px] m-4 rounded-sm animate-in zoom-in-95 duration-200 ${className}`;
+    : `bg-[#EFEFEF] border border-[#1883D7] shadow-2xl w-full max-w-[800px] ${heightClass} m-4 rounded-sm animate-in zoom-in-95 duration-200 ${className}`;
 
   return (
     <div className={`flex flex-col font-sans text-sm text-gray-900 bg-[#EFEFEF] ${isMaximized ? '' : 'border border-[#1883D7]'} ${containerClass}`}>
@@ -40,18 +44,28 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ title, children, onClo
       </div>
       
       {/* Content */}
-      <div className="flex-1 p-0 relative overflow-hidden flex flex-col">
+      <div className={`flex-1 p-0 relative flex flex-col ${autoHeight ? '' : 'overflow-hidden'}`}>
         {children}
       </div>
     </div>
   );
 };
 
-export const SetupButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ className, onClick, ...props }) => {
+interface SetupButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    isPrimary?: boolean;
+}
+
+export const SetupButton: React.FC<SetupButtonProps> = ({ className, onClick, isPrimary, ...props }) => {
+    const { guidedMode } = useSimulation();
+    
     return (
         <button 
             onClick={(e) => { playSound('click'); onClick?.(e); }}
-            className={`px-6 py-1.5 bg-[#E1E1E1] border border-[#ADADAD] hover:border-[#0078D7] hover:bg-[#E5F1FB] active:bg-[#CCE4F7] focus:outline-none focus:ring-1 focus:ring-blue-400 text-black text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${className}`}
+            className={`
+                px-6 py-1.5 bg-[#E1E1E1] border border-[#ADADAD] hover:border-[#0078D7] hover:bg-[#E5F1FB] active:bg-[#CCE4F7] focus:outline-none focus:ring-1 focus:ring-blue-400 text-black text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap relative
+                ${className}
+                ${guidedMode && isPrimary ? 'ring-2 ring-yellow-400 animate-pulse delay-500' : ''}
+            `}
             {...props}
         />
     )

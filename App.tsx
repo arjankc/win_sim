@@ -6,10 +6,28 @@ import { SetupWizard } from './components/screens/SetupWizard';
 import { OOBE } from './components/screens/OOBE';
 import { Desktop } from './components/screens/Desktop';
 import { ContextualHelp } from './components/ui/ContextualHelp';
-import { AlertTriangle, Power, Maximize2, ChevronDown } from 'lucide-react';
+import { AlertTriangle, Power, Maximize2, ChevronDown, Info } from 'lucide-react';
 import { playSound } from './services/soundService';
+import { SimulationProvider, useSimulation } from './contexts/SimulationContext';
 
-const App: React.FC = () => {
+// Toast Component
+const ToastDisplay = () => {
+    const { toasts } = useSimulation();
+    if (toasts.length === 0) return null;
+
+    return (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100000] flex flex-col gap-2 pointer-events-none">
+            {toasts.map(t => (
+                <div key={t.id} className="bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 animate-in slide-in-from-top-2 fade-in duration-300">
+                    <Info size={16} className={t.type === 'simulation' ? "text-yellow-400" : "text-blue-400"} />
+                    <span className="text-sm font-medium">{t.message}</span>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+const AppContent: React.FC = () => {
   // Simulation State
   const [hasStarted, setHasStarted] = useState(false);
   const [startPoint, setStartPoint] = useState<InstallState>(InstallState.MEDIA_CREATOR);
@@ -24,6 +42,8 @@ const App: React.FC = () => {
     usbBootEnabled: true,
     bootOrder: ['USB', 'HDD']
   });
+
+  const { showToast } = useSimulation();
 
   // --- Full Screen / Start Logic ---
 
@@ -317,9 +337,16 @@ const App: React.FC = () => {
     <>
       {renderSimulationContent()}
       {hasStarted && <ContextualHelp state={currentState} />}
+      <ToastDisplay />
     </>
   );
 };
+
+const App: React.FC = () => (
+    <SimulationProvider>
+        <AppContent />
+    </SimulationProvider>
+);
 
 // --- Helpers ---
 
