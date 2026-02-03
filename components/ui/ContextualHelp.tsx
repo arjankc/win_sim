@@ -117,7 +117,7 @@ export const ContextualHelp: React.FC<{ state: InstallState }> = ({ state }) => 
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[99999] flex flex-col items-end pointer-events-auto font-sans select-none">
+    <div className="fixed bottom-16 right-6 z-[99999] flex flex-col items-end pointer-events-auto font-sans select-none opacity-60 hover:opacity-100 transition-opacity duration-300">
         {/* Popover Card */}
         {isOpen && (
             <div className="mb-4 w-80 bg-white/90 backdrop-blur-md text-gray-900 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.3)] border border-white/20 overflow-hidden animate-in slide-in-from-bottom-5 zoom-in-95 duration-200">

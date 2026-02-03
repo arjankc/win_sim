@@ -4,7 +4,9 @@ import {
     Image as ImageIcon, Calculator, FileText, Power, Calendar as CalendarIcon, 
     ChevronUp, Bell, Code, Info, Moon, RefreshCcw, Folder, Terminal, ArrowLeft, 
     HardDrive, Activity, Palette, Play, Cpu, Layers, Database, ChevronRight, ChevronDown, Trash2,
-    Bluetooth, Plane, Sun, Accessibility, BatteryCharging, Gamepad2, Flag, Smile, Bomb, Copy
+    Bluetooth, Plane, Sun, Accessibility, BatteryCharging, Gamepad2, Flag, Smile, Bomb, Copy,
+    Shield, Mail, Globe, Lock, CheckCircle, AlertTriangle, User,
+    Download, Edit3, Send, Grid3X3, Projector, CheckSquare, List, Box, Mic
 } from 'lucide-react';
 import { generateWelcomeMessage } from '../../services/geminiService';
 import { playSound } from '../../services/soundService';
@@ -32,442 +34,614 @@ interface DesktopWindow {
 
 // --- APP COMPONENTS ---
 
-const MinesweeperApp = () => {
-    const ROWS = 9;
-    const COLS = 9;
-    const MINES = 10;
-    
-    interface Cell {
-        r: number;
-        c: number;
-        isMine: boolean;
-        isOpen: boolean;
-        isFlagged: boolean;
-        count: number;
-    }
+const SecurityApp = () => {
+    const [scanning, setScanning] = useState(false);
+    const [scanProgress, setScanProgress] = useState(0);
+    const [lastScan, setLastScan] = useState<string>("No recent scan");
+    const [defUpdateDate, setDefUpdateDate] = useState<string>("1/1/2024");
+    const [updatingDefs, setUpdatingDefs] = useState(false);
+    const [threats, setThreats] = useState(0);
+    const [firewall, setFirewall] = useState(true);
+    const [realtime, setRealtime] = useState(true);
+    const [tab, setTab] = useState('home');
+    const [showAllowedApps, setShowAllowedApps] = useState(false);
 
-    const [grid, setGrid] = useState<Cell[]>([]);
-    const [gameOver, setGameOver] = useState(false);
-    const [win, setWin] = useState(false);
-    const [initialized, setInitialized] = useState(false);
-
-    const initGame = () => {
-        const newGrid: Cell[] = [];
-        for(let r=0; r<ROWS; r++){
-            for(let c=0; c<COLS; c++){
-                newGrid.push({ r, c, isMine: false, isOpen: false, isFlagged: false, count: 0 });
-            }
-        }
-        
-        // Place mines randomly
-        let minesPlaced = 0;
-        while(minesPlaced < MINES) {
-            const idx = Math.floor(Math.random() * newGrid.length);
-            if(!newGrid[idx].isMine) {
-                newGrid[idx].isMine = true;
-                minesPlaced++;
-            }
-        }
-
-        // Calculate counts
-        for(let i=0; i<newGrid.length; i++) {
-            if(newGrid[i].isMine) continue;
-            const {r, c} = newGrid[i];
-            let count = 0;
-            for(let dr=-1; dr<=1; dr++) {
-                for(let dc=-1; dc<=1; dc++) {
-                    const nr = r+dr;
-                    const nc = c+dc;
-                    if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS) {
-                        const neighbor = newGrid.find(cell => cell.r === nr && cell.c === nc);
-                        if(neighbor?.isMine) count++;
-                    }
+    const startScan = () => {
+        setScanning(true);
+        setScanProgress(0);
+        const interval = setInterval(() => {
+            setScanProgress(prev => {
+                if (prev >= 100) {
+                    clearInterval(interval);
+                    setScanning(false);
+                    setLastScan(new Date().toLocaleTimeString());
+                    setThreats(0); // Always clean for now
+                    return 0;
                 }
-            }
-            newGrid[i].count = count;
-        }
-
-        setGrid(newGrid);
-        setGameOver(false);
-        setWin(false);
-        setInitialized(true);
+                return prev + 1;
+            });
+        }, 50);
     };
 
-    useEffect(() => { initGame(); }, []);
-
-    const handleClick = (idx: number) => {
-        if(gameOver || win || grid[idx].isFlagged || grid[idx].isOpen) return;
-        
-        const newGrid = [...grid];
-        const cell = newGrid[idx];
-
-        if(cell.isMine) {
-            cell.isOpen = true;
-            setGrid(newGrid);
-            setGameOver(true);
-            playSound('error');
-            return;
-        }
-
-        const openCell = (index: number) => {
-            if(newGrid[index].isOpen || newGrid[index].isFlagged) return;
-            newGrid[index].isOpen = true;
-            if(newGrid[index].count === 0) {
-                // Flood fill
-                const {r, c} = newGrid[index];
-                for(let dr=-1; dr<=1; dr++) {
-                    for(let dc=-1; dc<=1; dc++) {
-                        const nr = r+dr;
-                        const nc = c+dc;
-                        if(nr>=0 && nr<ROWS && nc>=0 && nc<COLS) {
-                             const neighborIdx = newGrid.findIndex(n => n.r === nr && n.c === nc);
-                             if(neighborIdx !== -1) openCell(neighborIdx);
-                        }
-                    }
-                }
-            }
-        };
-
-        openCell(idx);
-        setGrid(newGrid);
-
-        // Check win
-        if(newGrid.filter(c => !c.isMine && c.isOpen).length === (ROWS*COLS - MINES)) {
-            setWin(true);
-            playSound('notification');
-        }
-    };
-
-    const handleRightClick = (e: React.MouseEvent, idx: number) => {
-        e.preventDefault();
-        if(gameOver || win || grid[idx].isOpen) return;
-        const newGrid = [...grid];
-        newGrid[idx].isFlagged = !newGrid[idx].isFlagged;
-        setGrid(newGrid);
+    const updateDefs = () => {
+        setUpdatingDefs(true);
+        setTimeout(() => {
+            setDefUpdateDate(new Date().toLocaleDateString());
+            setUpdatingDefs(false);
+        }, 2000);
     };
 
     return (
-        <div className="h-full bg-[#C0C0C0] p-1 border-t-2 border-l-2 border-white border-b-2 border-r-2 border-gray-500 flex flex-col items-center text-black">
-            <div className="w-full flex justify-between items-center bg-[#C0C0C0] border-2 border-gray-400 p-1 mb-2">
-                <div className="bg-black text-red-500 font-mono text-xl px-1 border border-gray-500 w-12 text-center">
-                    {Math.max(0, MINES - grid.filter(c => c.isFlagged).length).toString().padStart(3, '0')}
+        <div className="flex h-full bg-white text-gray-900 font-sans select-none">
+            {/* Sidebar */}
+            <div className="w-64 bg-gray-100 p-4 border-r border-gray-200 flex flex-col gap-2">
+                <div className="flex items-center gap-2 mb-6 px-2">
+                    <Shield className="text-blue-600" size={24} />
+                    <span className="font-semibold text-lg">Windows Security</span>
                 </div>
-                <button onClick={initGame} className="w-8 h-8 border-2 border-gray-400 active:border-gray-500 bg-[#C0C0C0] flex items-center justify-center">
-                    {gameOver ? <span className="text-xl">😵</span> : (win ? <span className="text-xl">😎</span> : <Smile size={20} className="text-yellow-600 fill-yellow-300"/>)}
+                <button onClick={() => setTab('home')} className={`text-left px-4 py-3 rounded-sm hover:bg-gray-200 flex items-center gap-3 ${tab === 'home' ? 'bg-white shadow-sm border-l-4 border-blue-600' : ''}`}>
+                    <Shield size={18} /> Home
                 </button>
-                <div className="bg-black text-red-500 font-mono text-xl px-1 border border-gray-500 w-12 text-center">
-                    000
-                </div>
+                <button onClick={() => setTab('virus')} className={`text-left px-4 py-3 rounded-sm hover:bg-gray-200 flex items-center gap-3 ${tab === 'virus' ? 'bg-white shadow-sm border-l-4 border-blue-600' : ''}`}>
+                    <Activity size={18} /> Virus & threat protection
+                </button>
+                <button onClick={() => setTab('firewall')} className={`text-left px-4 py-3 rounded-sm hover:bg-gray-200 flex items-center gap-3 ${tab === 'firewall' ? 'bg-white shadow-sm border-l-4 border-blue-600' : ''}`}>
+                    <Globe size={18} /> Firewall & network protection
+                </button>
             </div>
 
-            <div className="grid grid-cols-9 border-4 border-gray-400">
-                {grid.map((cell, i) => (
-                    <div 
-                        key={i}
-                        onClick={() => handleClick(i)}
-                        onContextMenu={(e) => handleRightClick(e, i)}
-                        className={`w-6 h-6 border flex items-center justify-center text-xs font-bold cursor-pointer select-none
-                            ${cell.isOpen 
-                                ? 'bg-[#C0C0C0] border-gray-400 border-[0.5px]' 
-                                : 'bg-[#C0C0C0] border-t-white border-l-white border-b-gray-500 border-r-gray-500 border-2 active:border-none'
-                            }`}
-                    >
-                        {cell.isOpen && !cell.isMine && cell.count > 0 && <span style={{color: ['blue','green','red','darkblue','darkred','teal','black','gray'][cell.count-1]}}>{cell.count}</span>}
-                        {cell.isOpen && cell.isMine && <Bomb size={14}/>}
-                        {!cell.isOpen && cell.isFlagged && <Flag size={14} className="text-red-600 fill-red-600"/>}
+            {/* Content */}
+            <div className="flex-1 p-8 overflow-y-auto">
+                {tab === 'home' && (
+                    <div className="max-w-2xl">
+                        <h2 className="text-2xl font-light mb-6">Security at a glance</h2>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="p-6 border rounded hover:shadow-md transition-shadow cursor-pointer" onClick={() => setTab('virus')}>
+                                <div className="flex items-center gap-4 mb-2">
+                                    <Activity size={32} className="text-blue-600"/>
+                                    <div>
+                                        <div className="font-semibold">Virus & threat protection</div>
+                                        <div className="text-sm text-green-600">No actions needed.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-6 border rounded hover:shadow-md transition-shadow cursor-pointer" onClick={() => setTab('firewall')}>
+                                <div className="flex items-center gap-4 mb-2">
+                                    <Globe size={32} className="text-blue-600"/>
+                                    <div>
+                                        <div className="font-semibold">Firewall & network protection</div>
+                                        <div className="text-sm text-green-600">No actions needed.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                )}
+
+                {tab === 'virus' && (
+                    <div className="max-w-2xl">
+                        <h2 className="text-2xl font-light mb-6">Virus & threat protection</h2>
+                        
+                        <div className="mb-8">
+                            <div className="font-semibold mb-2">Current threats</div>
+                            <div className="text-sm text-gray-600 mb-4">Last scan: {lastScan}</div>
+                            {scanning ? (
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span>Estimated time remaining: 00:00:10</span>
+                                        <button onClick={() => setScanning(false)} className="text-blue-600 border border-transparent hover:border-gray-300 px-3 rounded">Cancel</button>
+                                    </div>
+                                    <div className="h-1 bg-gray-200 overflow-hidden"><div className="h-full bg-blue-600 transition-all duration-75" style={{width: `${scanProgress}%`}}></div></div>
+                                    <div className="text-xs text-gray-500">Files scanned: {Math.floor(scanProgress * 142)}</div>
+                                </div>
+                            ) : (
+                                <button onClick={startScan} className="bg-gray-100 hover:bg-gray-200 border border-gray-300 px-6 py-2 rounded-sm text-sm font-semibold">Quick scan</button>
+                            )}
+                        </div>
+
+                        <div className="border-t pt-6 mb-6">
+                            <div className="font-semibold mb-2">Virus & threat protection settings</div>
+                            <div className="flex items-center justify-between py-2">
+                                <div>
+                                    <div className="font-medium">Real-time protection</div>
+                                    <div className="text-sm text-gray-500">Locates and stops malware from installing or running on your device.</div>
+                                </div>
+                                <button onClick={() => setRealtime(!realtime)} className={`w-10 h-5 rounded-full relative transition-colors ${realtime ? 'bg-blue-600' : 'bg-gray-400'}`}>
+                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${realtime ? 'left-6' : 'left-1'}`}></div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="border-t pt-6">
+                            <div className="font-semibold mb-2">Virus & threat protection updates</div>
+                            <div className="text-sm text-gray-600 mb-2">Security intelligence is up to date.</div>
+                            <div className="text-xs text-gray-500 mb-4">Last update: {defUpdateDate}</div>
+                            <button onClick={updateDefs} disabled={updatingDefs} className="text-blue-600 text-sm font-medium hover:underline disabled:opacity-50">
+                                {updatingDefs ? "Checking for updates..." : "Check for updates"}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {tab === 'firewall' && (
+                    <div className="max-w-2xl">
+                        <h2 className="text-2xl font-light mb-6">Firewall & network protection</h2>
+                        
+                        {!showAllowedApps ? (
+                            <>
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="bg-blue-100 p-4 rounded-full text-blue-600"><Globe size={32}/></div>
+                                    <div>
+                                        <div className="font-semibold text-lg">Domain network</div>
+                                        <div className="text-sm text-gray-500">(Not connected)</div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="bg-blue-100 p-4 rounded-full text-blue-600"><Lock size={32}/></div>
+                                    <div>
+                                        <div className="font-semibold text-lg">Private network</div>
+                                        <div className="text-sm text-green-600">Active</div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="bg-blue-100 p-4 rounded-full text-blue-600"><Globe size={32}/></div>
+                                    <div>
+                                        <div className="font-semibold text-lg">Public network</div>
+                                        <div className="text-sm text-green-600">Active</div>
+                                    </div>
+                                </div>
+                                <div className="border-t pt-6 space-y-4">
+                                    <button onClick={() => setShowAllowedApps(true)} className="text-blue-600 text-sm hover:underline block">Allow an app through firewall</button>
+                                    <div className="text-blue-600 text-sm hover:underline block cursor-pointer">Network and Internet troubleshooter</div>
+                                    <div className="text-blue-600 text-sm hover:underline block cursor-pointer">Firewall notification settings</div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="animate-in fade-in slide-in-from-right-4">
+                                <button onClick={() => setShowAllowedApps(false)} className="mb-4 flex items-center gap-2 text-blue-600 hover:underline"><ArrowLeft size={16}/> Back</button>
+                                <h3 className="font-semibold text-lg mb-4">Allowed apps and features</h3>
+                                <p className="text-sm text-gray-600 mb-4">Check the boxes next to the apps you want to allow to communicate over the network.</p>
+                                <div className="border rounded h-64 overflow-y-auto">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-gray-100 border-b">
+                                            <tr>
+                                                <th className="p-2 font-normal">Allowed apps and features</th>
+                                                <th className="p-2 font-normal w-20 text-center">Private</th>
+                                                <th className="p-2 font-normal w-20 text-center">Public</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {[
+                                                "Microsoft Office",
+                                                "Core Networking",
+                                                "File and Printer Sharing",
+                                                "Google Chrome",
+                                                "Microsoft Edge",
+                                                "Remote Desktop",
+                                                "Spotify Music",
+                                                "Windows Security",
+                                                "Zoom Meetings"
+                                            ].map((app, i) => (
+                                                <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
+                                                    <td className="p-2">{app}</td>
+                                                    <td className="p-2 text-center"><input type="checkbox" defaultChecked className="rounded"/></td>
+                                                    <td className="p-2 text-center"><input type="checkbox" defaultChecked={i % 2 === 0} className="rounded"/></td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+};
+
+const MailApp = () => {
+    const [setup, setSetup] = useState(true);
+    const [email, setEmail] = useState("");
+    const [view, setView] = useState<'inbox'|'sent'|'compose'>('inbox');
+    
+    // Fake email store
+    const [inbox, setInbox] = useState([
+        { from: 'WinSim Team', subject: 'Welcome to your new PC!', body: 'Thanks for trying out the WinSim OS Installation Simulator. We hope you enjoy the experience.', date: '10:00 AM' },
+        { from: 'Microsoft Account', subject: 'Security alert', body: 'New sign-in detected from "WinSim Virtual Machine". Was this you?', date: '9:30 AM' }
+    ]);
+    const [sent, setSent] = useState<{to: string, subject: string, body: string, date: string}[]>([]);
+
+    // Compose state
+    const [to, setTo] = useState("");
+    const [subject, setSubject] = useState("");
+    const [body, setBody] = useState("");
+
+    const handleSend = () => {
+        const newEmail = { to, subject, body, date: new Date().toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'}) };
+        setSent([newEmail, ...sent]);
+        setView('sent');
+        
+        // If sent to self, receive it
+        if (to.toLowerCase().includes(email.toLowerCase()) || to.toLowerCase().includes('user')) {
+            setTimeout(() => {
+                setInbox([{ from: 'Me', subject, body, date: 'Just now' }, ...inbox]);
+                playSound('notification');
+            }, 2000);
+        }
+
+        // Reset
+        setTo("");
+        setSubject("");
+        setBody("");
+    };
+    
+    if (setup) {
+        return (
+            <div className="flex h-full bg-[#f3f3f3] items-center justify-center font-sans text-gray-900">
+                <div className="bg-white p-8 shadow-xl w-96 flex flex-col gap-4">
+                    <div className="flex items-center gap-2 text-xl font-semibold mb-4">
+                        <div className="bg-blue-500 text-white p-1 rounded"><Mail size={20}/></div>
+                        <span>Add an account</span>
+                    </div>
+                    <p className="text-sm text-gray-600">Enter your email address to get started.</p>
+                    <input 
+                        className="border-b-2 border-blue-500 p-2 outline-none focus:bg-gray-50" 
+                        placeholder="Email address" 
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                    />
+                    <div className="text-xs text-gray-500">We'll assume this is for simulation purposes.</div>
+                    <div className="flex justify-end mt-4">
+                        <button 
+                            disabled={!email.includes('@')}
+                            onClick={() => setSetup(false)} 
+                            className="bg-blue-600 text-white px-6 py-2 hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            Sign in
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex h-full bg-white text-gray-900 font-sans">
+            {/* Sidebar */}
+            <div className="w-48 bg-[#f0f0f0] flex flex-col border-r border-gray-200">
+                <div className="p-4 font-semibold text-lg flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm">{email[0].toUpperCase()}</div>
+                    Accounts
+                </div>
+                <div className="flex-1 overflow-y-auto pt-2">
+                    <button onClick={() => setView('compose')} className="mx-4 mb-4 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 shadow-sm font-semibold text-sm">
+                        <Edit3 size={16}/> New mail
+                    </button>
+                    <div className="px-4 py-2 font-semibold text-gray-600 text-xs uppercase tracking-wider">Folders</div>
+                    <div onClick={() => setView('inbox')} className={`px-4 py-2 cursor-pointer flex justify-between items-center ${view === 'inbox' ? 'bg-white border-l-4 border-blue-600 font-semibold' : 'hover:bg-white border-l-4 border-transparent'}`}>
+                        <span>Inbox</span> 
+                        {inbox.length > 0 && <span className="text-blue-600 text-xs">{inbox.length}</span>}
+                    </div>
+                    <div onClick={() => setView('sent')} className={`px-4 py-2 cursor-pointer ${view === 'sent' ? 'bg-white border-l-4 border-blue-600 font-semibold' : 'hover:bg-white border-l-4 border-transparent'}`}>Sent</div>
+                    <div className="px-4 py-2 hover:bg-white cursor-pointer border-l-4 border-transparent">Drafts</div>
+                </div>
+            </div>
+            
+            {/* Content Area */}
+            <div className="flex-1 flex flex-col">
+                {view === 'compose' ? (
+                    <div className="flex-1 flex flex-col p-8 bg-white">
+                        <div className="text-xl font-semibold mb-6">New Message</div>
+                        <div className="space-y-4 flex-1 flex flex-col">
+                            <input className="border-b p-2 outline-none focus:border-blue-500" placeholder="To" value={to} onChange={e => setTo(e.target.value)}/>
+                            <input className="border-b p-2 outline-none focus:border-blue-500" placeholder="Subject" value={subject} onChange={e => setSubject(e.target.value)}/>
+                            <textarea className="flex-1 border p-2 mt-4 resize-none outline-none focus:border-blue-500 rounded-sm" placeholder="Type your message..." value={body} onChange={e => setBody(e.target.value)}/>
+                        </div>
+                        <div className="flex justify-end mt-4">
+                            <button onClick={handleSend} className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 flex items-center gap-2">
+                                <Send size={16}/> Send
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex h-full">
+                        {/* List */}
+                        <div className="w-80 border-r border-gray-200 overflow-y-auto bg-white">
+                            <div className="p-4 font-bold text-xl border-b border-gray-100 capitalize">{view}</div>
+                            {(view === 'inbox' ? inbox : sent).map((msg, i) => (
+                                <div key={i} className="p-4 border-b border-gray-100 hover:bg-blue-50 cursor-pointer">
+                                    <div className="flex justify-between mb-1">
+                                        <div className="font-semibold text-sm truncate w-40">{view === 'inbox' ? (msg as any).from : (msg as any).to}</div>
+                                        <div className="text-xs text-gray-500">{msg.date}</div>
+                                    </div>
+                                    <div className="text-xs font-medium text-blue-600 truncate mb-1">{msg.subject}</div>
+                                    <div className="text-xs text-gray-500 line-clamp-2">{msg.body}</div>
+                                </div>
+                            ))}
+                            {(view === 'inbox' ? inbox : sent).length === 0 && (
+                                <div className="p-8 text-center text-gray-400 text-sm">Nothing here yet.</div>
+                            )}
+                        </div>
+                        {/* Reading Pane (Placeholder for simplicity) */}
+                        <div className="flex-1 bg-gray-50 flex items-center justify-center text-gray-400">
+                            <Mail size={48} className="opacity-20"/>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+};
+
+// --- OFFICE APPS ---
+
+const WordApp = () => (
+    <div className="flex flex-col h-full bg-white text-gray-900 font-sans">
+        <div className="bg-[#2B579A] text-white p-2 flex items-center gap-4">
+            <FileText size={20}/>
+            <span className="font-semibold text-sm">Document1 - Word</span>
+        </div>
+        <div className="bg-[#F3F3F3] border-b border-gray-300 p-2 flex gap-2 text-sm text-gray-700">
+            <span className="hover:bg-gray-300 px-2 rounded cursor-pointer">File</span>
+            <span className="hover:bg-gray-300 px-2 rounded cursor-pointer font-semibold border-b-2 border-[#2B579A]">Home</span>
+            <span className="hover:bg-gray-300 px-2 rounded cursor-pointer">Insert</span>
+            <span className="hover:bg-gray-300 px-2 rounded cursor-pointer">Layout</span>
+        </div>
+        <div className="bg-[#F3F3F3] p-2 border-b border-gray-300 flex gap-4 items-center h-10 shadow-sm">
+            {/* Toolbar mocks */}
+            <select className="border text-xs h-6 w-32"><option>Calibri</option></select>
+            <select className="border text-xs h-6 w-12"><option>11</option></select>
+            <div className="flex gap-1 border-l pl-2 border-gray-300">
+                <button className="font-bold w-6 hover:bg-gray-300 rounded">B</button>
+                <button className="italic w-6 hover:bg-gray-300 rounded">I</button>
+                <button className="underline w-6 hover:bg-gray-300 rounded">U</button>
+            </div>
+        </div>
+        <div className="flex-1 bg-[#F0F0F0] p-8 overflow-y-auto flex justify-center">
+            <div 
+                className="w-[816px] min-h-[1056px] bg-white shadow-lg p-12 outline-none" 
+                contentEditable 
+                suppressContentEditableWarning
+                style={{fontFamily: 'Calibri, sans-serif'}}
+            >
+                <h1 className="text-2xl font-bold mb-4">PRC110 Assignment</h1>
+                <p>Name: User</p>
+                <p>Date: {new Date().toLocaleDateString()}</p>
+                <br/>
+                <p>Type here...</p>
+            </div>
+        </div>
+        <div className="bg-[#2B579A] text-white text-xs px-2 py-0.5 flex justify-between">
+            <div>Page 1 of 1 &nbsp; 32 words</div>
+            <div>100%</div>
+        </div>
+    </div>
+);
+
+const ExcelApp = () => (
+    <div className="flex flex-col h-full bg-white text-gray-900 font-sans">
+        <div className="bg-[#217346] text-white p-2 flex items-center gap-4">
+            <Grid3X3 size={20}/>
+            <span className="font-semibold text-sm">Book1 - Excel</span>
+        </div>
+        <div className="bg-[#F3F3F3] border-b border-gray-300 p-2 flex gap-2 text-sm text-gray-700">
+            <span className="hover:bg-gray-300 px-2 rounded cursor-pointer">File</span>
+            <span className="hover:bg-gray-300 px-2 rounded cursor-pointer font-semibold border-b-2 border-[#217346]">Home</span>
+            <span className="hover:bg-gray-300 px-2 rounded cursor-pointer">Insert</span>
+            <span className="hover:bg-gray-300 px-2 rounded cursor-pointer">Formulas</span>
+        </div>
+        <div className="bg-white border-b border-gray-300 flex items-center px-2 py-1 gap-2">
+            <span className="text-gray-500 font-serif italic font-bold">fx</span>
+            <input className="flex-1 border border-gray-300 p-1 text-sm outline-none" placeholder=""/>
+        </div>
+        <div className="flex-1 overflow-auto bg-white">
+            <div className="grid grid-cols-[40px_repeat(10,100px)] text-sm">
+                <div className="bg-gray-100 border-b border-r border-gray-300"></div>
+                {['A','B','C','D','E','F','G','H','I','J'].map(col => (
+                    <div key={col} className="bg-gray-100 border-b border-r border-gray-300 text-center font-semibold text-gray-600">{col}</div>
+                ))}
+                {[...Array(20)].map((_, r) => (
+                    <React.Fragment key={r}>
+                        <div className="bg-gray-100 border-b border-r border-gray-300 text-center font-semibold text-gray-600">{r+1}</div>
+                        {[...Array(10)].map((_, c) => (
+                            <input key={`${r}-${c}`} className="border-b border-r border-gray-200 outline-none px-1 focus:border-green-500 focus:ring-1 focus:ring-green-500 z-10" />
+                        ))}
+                    </React.Fragment>
                 ))}
             </div>
         </div>
-    )
-};
-
-const QuickSettings = ({ isDark, setIsDark, bgImage }: { isDark: boolean, setIsDark: (v: boolean) => void, bgImage: string }) => {
-    const [vol, setVol] = useState(80);
-    const [bri, setBri] = useState(100);
-    const [wifi, setWifi] = useState(true);
-    const [bt, setBt] = useState(true);
-    const [plane, setPlane] = useState(false);
-
-    const toggleClass = (active: boolean) => active ? (isDark ? 'bg-blue-500 text-white' : 'bg-blue-500 text-white') : (isDark ? 'bg-[#333] text-gray-300' : 'bg-gray-200 text-gray-700');
-
-    return (
-        <div className={`absolute bottom-12 right-2 w-80 p-4 rounded-xl shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-5 border z-[10000] ${isDark ? 'bg-[#202020]/90 border-[#333] text-white' : 'bg-[#F3F3F3]/90 border-gray-300 text-black'}`} onClick={e => e.stopPropagation()}>
-             <div className="grid grid-cols-3 gap-3 mb-6">
-                 <button onClick={() => setWifi(!wifi)} className={`h-20 rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${toggleClass(wifi)}`}>
-                     <Wifi size={20}/> <span className="text-xs font-semibold">Wi-Fi</span>
-                 </button>
-                 <button onClick={() => setBt(!bt)} className={`h-20 rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${toggleClass(bt)}`}>
-                     <Bluetooth size={20}/> <span className="text-xs font-semibold">Bluetooth</span>
-                 </button>
-                 <button onClick={() => setPlane(!plane)} className={`h-20 rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${toggleClass(plane)}`}>
-                     <Plane size={20}/> <span className="text-xs font-semibold">Airplane</span>
-                 </button>
-                 <button onClick={() => setIsDark(!isDark)} className={`h-20 rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${toggleClass(isDark)}`}>
-                     <Moon size={20}/> <span className="text-xs font-semibold">Dark Mode</span>
-                 </button>
-                 <button className={`h-20 rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${toggleClass(false)}`}>
-                     <BatteryCharging size={20}/> <span className="text-xs font-semibold">Saver</span>
-                 </button>
-                 <button className={`h-20 rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${toggleClass(false)}`}>
-                     <Accessibility size={20}/> <span className="text-xs font-semibold">Access</span>
-                 </button>
-             </div>
-
-             <div className="space-y-4 mb-4">
-                 <div className="flex items-center gap-3">
-                     <Sun size={18} className="text-gray-500"/>
-                     <input type="range" min="0" max="100" value={bri} onChange={e => setBri(Number(e.target.value))} className="flex-1 accent-blue-500 h-1 bg-gray-300 rounded-full appearance-none"/>
-                 </div>
-                 <div className="flex items-center gap-3">
-                     <Volume2 size={18} className="text-gray-500"/>
-                     <input type="range" min="0" max="100" value={vol} onChange={e => setVol(Number(e.target.value))} className="flex-1 accent-blue-500 h-1 bg-gray-300 rounded-full appearance-none"/>
-                 </div>
-             </div>
-
-             <div className={`pt-3 border-t flex justify-between items-center ${isDark ? 'border-[#444]' : 'border-gray-200'}`}>
-                 <div className="text-xs text-gray-500 flex items-center gap-1">
-                     <Battery size={14}/> 84%
-                 </div>
-                 <Settings size={16} className="text-gray-500 cursor-pointer hover:rotate-90 transition-transform"/>
-             </div>
+        <div className="bg-[#F3F3F3] border-t border-gray-300 px-2 py-0.5 text-xs text-gray-600 flex gap-4">
+            <span className="font-bold text-[#217346]">Sheet1</span>
+            <span>+</span>
         </div>
-    );
-};
+    </div>
+);
 
-const BrowserApp = () => {
-    const [url, setUrl] = useState("https://www.bing.com");
-    const [inputValue, setInputValue] = useState("https://www.bing.com");
-    const [page, setPage] = useState("home"); // home | google | error
-
-    const navigate = (e: React.FormEvent) => {
-        e.preventDefault();
-        let target = inputValue.toLowerCase();
-        if (!target.startsWith('http')) target = 'https://' + target;
-        
-        setUrl(target);
-        if (target.includes("google")) setPage("google");
-        else if (target.includes("bing")) setPage("home");
-        else setPage("error");
-    };
-
-    return (
-        <div className="flex flex-col h-full bg-white text-gray-900 font-sans">
-            {/* Toolbar */}
-            <div className="flex items-center gap-2 p-2 border-b bg-gray-50">
-                <button className="p-1 hover:bg-gray-200 rounded text-gray-600"><ArrowLeft size={16}/></button>
-                <button className="p-1 hover:bg-gray-200 rounded text-gray-600"><RefreshCcw size={14}/></button>
-                <form onSubmit={navigate} className="flex-1">
-                    <input 
-                        className="w-full border border-gray-300 rounded-full px-4 py-1.5 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-black" 
-                        value={inputValue} 
-                        onChange={e=>setInputValue(e.target.value)} 
-                        onFocus={(e) => e.target.select()}
-                    />
-                </form>
-            </div>
-            {/* Content */}
-            <div className="flex-1 overflow-auto p-0 relative">
-                {page === 'home' && (
-                     <div className="flex flex-col items-center justify-center h-full bg-[url('https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=2000&q=80')] bg-cover bg-center">
-                         <div className="bg-black/10 backdrop-blur-sm p-10 rounded-xl flex flex-col items-center w-full h-full justify-center">
-                            <h1 className="text-6xl font-bold text-white mb-8 drop-shadow-lg">Bing</h1>
-                            <div className="w-[600px] flex border-2 border-white/50 rounded-full shadow-2xl overflow-hidden p-3 bg-white">
-                                <input className="flex-1 outline-none ml-2 text-lg text-black" placeholder="Search the web" />
-                                <Search className="text-blue-500 mr-2" size={24} />
-                            </div>
-                         </div>
-                     </div>
-                )}
-                {page === 'google' && (
-                    <div className="flex flex-col items-center justify-center h-full bg-white text-black">
-                         <div className="text-6xl font-bold mb-8 flex gap-1">
-                             <span className="text-blue-500">G</span>
-                             <span className="text-red-500">o</span>
-                             <span className="text-yellow-500">o</span>
-                             <span className="text-blue-500">g</span>
-                             <span className="text-green-500">l</span>
-                             <span className="text-red-500">e</span>
-                         </div>
-                         <div className="w-[500px] flex border border-gray-200 hover:shadow-md rounded-full p-3 bg-white transition-shadow">
-                            <Search className="text-gray-400 ml-2" />
-                            <input className="flex-1 outline-none ml-3 text-black" />
-                         </div>
-                         <div className="mt-8 flex gap-4">
-                             <button className="bg-gray-50 border border-transparent hover:border-gray-200 hover:shadow-sm px-4 py-2 text-sm text-gray-800 rounded">Google Search</button>
-                             <button className="bg-gray-50 border border-transparent hover:border-gray-200 hover:shadow-sm px-4 py-2 text-sm text-gray-800 rounded">I'm Feeling Lucky</button>
-                         </div>
-                    </div>
-                )}
-                {page === 'error' && (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-600 bg-[#f8f9fa]">
-                        <span className="text-6xl mb-4 text-gray-400">:(</span>
-                        <h2 className="text-2xl font-semibold mb-2">Hmm, we can't reach this page.</h2>
-                        <p className="text-sm">Check if there is a typo in {url}</p>
-                    </div>
-                )}
-            </div>
+const PowerPointApp = () => (
+    <div className="flex flex-col h-full bg-white text-gray-900 font-sans">
+        <div className="bg-[#D24726] text-white p-2 flex items-center gap-4">
+            <Projector size={20}/>
+            <span className="font-semibold text-sm">Presentation1 - PowerPoint</span>
         </div>
-    )
-}
-
-const RegEditApp = () => {
-    const [selectedKey, setSelectedKey] = useState("Computer");
-    const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set(["Computer"]));
-
-    const toggleExpand = (key: string) => {
-        const newSet = new Set(expandedKeys);
-        if (newSet.has(key)) newSet.delete(key);
-        else newSet.add(key);
-        setExpandedKeys(newSet);
-    };
-
-    const treeData = {
-        name: "Computer",
-        children: [
-            {
-                name: "HKEY_CLASSES_ROOT",
-                children: [{ name: ".exe" }, { name: "Directory" }]
-            },
-            {
-                name: "HKEY_CURRENT_USER",
-                children: [
-                    { name: "Control Panel", children: [{ name: "Desktop" }, { name: "Mouse" }] },
-                    { name: "Software", children: [{ name: "Microsoft" }, { name: "WinSim" }] }
-                ]
-            },
-            {
-                name: "HKEY_LOCAL_MACHINE",
-                children: [
-                    { name: "HARDWARE" },
-                    { name: "SAM" },
-                    { 
-                        name: "SOFTWARE", 
-                        children: [
-                            { name: "Microsoft", children: [{ name: "Windows NT", children: [{ name: "CurrentVersion" }] }] }
-                        ] 
-                    },
-                    { name: "SYSTEM" }
-                ]
-            },
-            { name: "HKEY_USERS" },
-            { name: "HKEY_CURRENT_CONFIG" }
-        ]
-    };
-
-    const renderTree = (node: any, path: string = "") => {
-        const currentPath = path ? `${path}\\${node.name}` : node.name;
-        const isExpanded = expandedKeys.has(currentPath);
-        const isSelected = selectedKey === currentPath;
-
-        return (
-            <div key={currentPath} className="select-none">
-                <div 
-                    className={`flex items-center gap-1 px-1 py-0.5 hover:bg-blue-50 cursor-default ${isSelected ? 'bg-blue-100 border border-blue-200' : 'border border-transparent'}`}
-                    onClick={(e) => { e.stopPropagation(); setSelectedKey(currentPath); }}
-                >
-                    {node.children ? (
-                        <div onClick={(e) => { e.stopPropagation(); toggleExpand(currentPath); }} className="p-0.5 hover:bg-gray-200 rounded">
-                            {isExpanded ? <ChevronDown size={12} className="text-gray-500"/> : <ChevronRight size={12} className="text-gray-500"/>}
-                        </div>
-                    ) : <div className="w-4"/>}
-                    <Folder size={14} className="text-yellow-500 fill-yellow-500"/>
-                    <span className="text-xs truncate text-gray-800">{node.name}</span>
+        <div className="bg-[#F3F3F3] border-b border-gray-300 p-2 flex gap-2 text-sm text-gray-700">
+            <span className="hover:bg-gray-300 px-2 rounded cursor-pointer">File</span>
+            <span className="hover:bg-gray-300 px-2 rounded cursor-pointer font-semibold border-b-2 border-[#D24726]">Home</span>
+            <span className="hover:bg-gray-300 px-2 rounded cursor-pointer">Insert</span>
+            <span className="hover:bg-gray-300 px-2 rounded cursor-pointer">Design</span>
+        </div>
+        <div className="flex-1 flex bg-[#F0F0F0] overflow-hidden">
+            {/* Slide sorter */}
+            <div className="w-48 border-r border-gray-300 p-4 flex flex-col gap-4 overflow-y-auto">
+                <div className="aspect-video bg-white border-2 border-[#D24726] shadow-sm p-2 flex flex-col justify-center items-center text-[4px]">
+                    <div className="h-2 w-16 bg-gray-300 mb-1"></div>
+                    <div className="h-1 w-10 bg-gray-200"></div>
                 </div>
-                {isExpanded && node.children && (
-                    <div className="pl-4 border-l border-gray-300 border-dotted ml-2">
-                        {node.children.map((child: any) => renderTree(child, currentPath))}
-                    </div>
-                )}
             </div>
-        );
-    };
+            {/* Main Stage */}
+            <div className="flex-1 p-8 flex items-center justify-center bg-[#E6E6E6]">
+                <div className="aspect-video w-full max-w-4xl bg-white shadow-2xl flex flex-col items-center justify-center p-16 select-text">
+                    <input className="text-5xl font-light text-center w-full border border-dotted border-transparent hover:border-gray-400 p-2 mb-4 outline-none placeholder-gray-400" placeholder="Click to add title"/>
+                    <input className="text-2xl text-gray-500 text-center w-full border border-dotted border-transparent hover:border-gray-400 p-2 outline-none placeholder-gray-300" placeholder="Click to add subtitle"/>
+                </div>
+            </div>
+        </div>
+        <div className="bg-[#D24726] text-white text-xs px-2 py-0.5 flex justify-between">
+            <div>Slide 1 of 1</div>
+            <div>English (United States)</div>
+        </div>
+    </div>
+);
 
-    const mockValues: Record<string, any[]> = {
-        "Computer\\HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion": [
-            { name: "(Default)", type: "REG_SZ", data: "(value not set)" },
-            { name: "ProductName", type: "REG_SZ", data: "Windows 11 Pro" },
-            { name: "CurrentBuild", type: "REG_SZ", data: "22621" },
-            { name: "RegisteredOwner", type: "REG_SZ", data: "User" },
-            { name: "SystemRoot", type: "REG_SZ", data: "C:\\Windows" },
-        ],
-        "Computer\\HKEY_CURRENT_USER\\Control Panel\\Desktop": [
-            { name: "Wallpaper", type: "REG_SZ", data: "C:\\Windows\\Web\\Wallpaper\\Theme1\\img1.jpg" },
-            { name: "CursorBlinkRate", type: "REG_SZ", data: "530" },
-        ]
+const OfficeInstallerApp = ({ onComplete }: { onComplete: () => void }) => {
+    const [progress, setProgress] = useState(0);
+    
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setProgress(prev => {
+                if(prev >= 100) {
+                    clearInterval(interval);
+                    setTimeout(onComplete, 1000);
+                    return 100;
+                }
+                return prev + 0.5;
+            });
+        }, 30);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="h-full flex flex-col items-center justify-center bg-white p-8 text-center select-none">
+            <div className="mb-8">
+                <div className="flex gap-2 justify-center mb-4">
+                    <div className="w-8 h-8 bg-[#D24726] text-white flex items-center justify-center font-bold">P</div>
+                    <div className="w-8 h-8 bg-[#217346] text-white flex items-center justify-center font-bold">X</div>
+                    <div className="w-8 h-8 bg-[#2B579A] text-white flex items-center justify-center font-bold">W</div>
+                </div>
+                <h2 className="text-2xl font-light text-gray-700">Installing Office...</h2>
+                <p className="text-gray-500 text-sm mt-2">Please stay online while Office downloads.</p>
+            </div>
+            <div className="w-full max-w-md bg-gray-200 h-1 rounded-full overflow-hidden mb-2">
+                <div className="h-full bg-[#D83B01] transition-all duration-100" style={{width: `${progress}%`}}></div>
+            </div>
+            <div className="text-xs text-gray-400">{Math.floor(progress)}%</div>
+        </div>
+    )
+};
+
+const TaskManagerApp = ({ openWindows, onCloseWindow, onBsod }: { openWindows: DesktopWindow[], onCloseWindow: (id: string) => void, onBsod: () => void }) => {
+    const [tab, setTab] = useState('processes');
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const systemProcesses = [
+        { id: 'sys1', name: 'System', status: 'Running', cpu: '0.1%', mem: '0.1 MB' },
+        { id: 'sys2', name: 'Registry', status: 'Running', cpu: '0%', mem: '12 MB' },
+        { id: 'sys3', name: 'Service Host: Local System', status: 'Running', cpu: '0%', mem: '4 MB' },
+        { id: 'sys4', name: 'Client Server Runtime Process', status: 'Running', cpu: '0%', mem: '1.2 MB' },
+        { id: 'sys5', name: 'Desktop Window Manager', status: 'Running', cpu: '0.2%', mem: '45 MB' },
+    ];
+
+    const apps = openWindows.map(w => ({ id: w.id, name: w.title, status: 'Running', cpu: '0%', mem: '120 MB', isApp: true }));
+    const all = [...apps, ...systemProcesses];
+
+    const handleEndTask = () => {
+        if (!selectedId) return;
+        const isApp = openWindows.find(w => w.id === selectedId);
+        if (isApp) {
+            onCloseWindow(selectedId);
+            setSelectedId(null);
+        } else {
+            // System process
+            onBsod();
+        }
     };
 
     return (
-        <div className="flex flex-col h-full bg-white text-gray-900 text-xs font-sans">
-             <div className="flex gap-1 p-1 border-b border-gray-200 bg-gray-50 text-gray-600">
-                 <span>File</span> <span>Edit</span> <span>View</span> <span>Favorites</span> <span>Help</span>
-             </div>
-             <div className="border-b border-gray-200 bg-white p-1 flex items-center gap-1 text-gray-500">
-                 <Monitor size={12}/>
-                 <input className="w-full outline-none text-xs text-gray-700" value={selectedKey} readOnly/>
-             </div>
-             <div className="flex-1 flex overflow-hidden">
-                 <div className="w-1/3 border-r border-gray-200 overflow-y-auto p-1 bg-white">
-                     {renderTree(treeData)}
-                 </div>
-                 <div className="flex-1 bg-white overflow-y-auto">
-                     <div className="grid grid-cols-[1fr_100px_1fr] gap-1 px-2 py-1 border-b border-gray-100 text-gray-500">
-                         <div>Name</div>
-                         <div>Type</div>
-                         <div>Data</div>
-                     </div>
-                     {(mockValues[selectedKey] || [{ name: "(Default)", type: "REG_SZ", data: "(value not set)" }]).map((val, i) => (
-                         <div key={i} className="grid grid-cols-[1fr_100px_1fr] gap-1 px-2 py-0.5 hover:bg-blue-50 cursor-default group">
-                             <div className="flex items-center gap-2">
-                                <span className="text-red-500 font-bold text-[10px]">ab</span>
-                                {val.name}
-                             </div>
-                             <div>{val.type}</div>
-                             <div className="truncate">{val.data}</div>
-                         </div>
-                     ))}
-                 </div>
-             </div>
-             <div className="bg-gray-50 border-t border-gray-200 px-2 py-0.5 text-gray-500">
-                 {selectedKey}
-             </div>
+        <div className="flex flex-col h-full bg-white text-xs select-none">
+            <div className="flex bg-white border-b border-gray-200">
+                 <button onClick={() => setTab('processes')} className={`px-4 py-2 border-b-2 ${tab === 'processes' ? 'border-blue-500 text-blue-600' : 'border-transparent'}`}>Processes</button>
+                 <button className="px-4 py-2 border-b-2 border-transparent text-gray-500">Performance</button>
+                 <button className="px-4 py-2 border-b-2 border-transparent text-gray-500">App history</button>
+            </div>
+            <div className="bg-gray-100 grid grid-cols-[3fr_1fr_1fr_1fr] px-4 py-1 border-b border-gray-200 text-gray-600 font-semibold">
+                <div>Name</div>
+                <div>Status</div>
+                <div>CPU</div>
+                <div>Memory</div>
+            </div>
+            <div className="flex-1 overflow-y-auto bg-white">
+                {all.map(p => (
+                    <div 
+                        key={p.id} 
+                        onClick={() => setSelectedId(p.id)}
+                        className={`grid grid-cols-[3fr_1fr_1fr_1fr] px-4 py-2 border-b border-gray-50 cursor-pointer ${selectedId === p.id ? 'bg-blue-100' : 'hover:bg-gray-50'}`}
+                    >
+                        <div className="flex items-center gap-2">
+                             <div className="w-3 h-3 bg-blue-500 rounded-sm"></div> {p.name}
+                        </div>
+                        <div>{p.status}</div>
+                        <div>{p.cpu}</div>
+                        <div>{p.mem}</div>
+                    </div>
+                ))}
+            </div>
+            <div className="p-2 border-t border-gray-200 flex justify-end bg-gray-50">
+                <button 
+                    disabled={!selectedId}
+                    onClick={handleEndTask}
+                    className="px-4 py-1.5 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50 text-gray-800"
+                >
+                    End task
+                </button>
+            </div>
         </div>
     )
-}
+};
+
+const CalculatorApp = () => {
+    const [display, setDisplay] = useState("0");
+    return (
+        <div className="h-full bg-[#f3f3f3] flex flex-col p-2 gap-1 font-sans">
+            <div className="flex-1 bg-transparent flex items-end justify-end text-4xl p-4 font-semibold text-gray-800 mb-2 truncate">
+                {display}
+            </div>
+            <div className="grid grid-cols-4 gap-1 flex-1">
+                 {['%', 'CE', 'C', 'del', '1/x', 'sq', 'sqrt', '/', '7', '8', '9', 'X', '4', '5', '6', '-', '1', '2', '3', '+', '+/-', '0', '.', '='].map(b => (
+                     <button 
+                        key={b}
+                        onClick={() => setDisplay(prev => prev === "0" ? b : prev + b)}
+                        className={`rounded hover:opacity-80 text-sm font-semibold ${['=', '+', '-', 'X', '/'].includes(b) ? 'bg-[#0078D7] text-white' : (['0','1','2','3','4','5','6','7','8','9'].includes(b) ? 'bg-white text-gray-900 border border-gray-200' : 'bg-[#f9f9f9] text-gray-900 border border-gray-200')}`}
+                     >
+                         {b}
+                     </button>
+                 ))}
+            </div>
+        </div>
+    )
+};
 
 const NotepadApp = ({ theme }: { theme: 'light' | 'dark' }) => (
-    <div className={`flex flex-col h-full font-sans ${theme === 'dark' ? 'bg-[#2b2b2b] text-white' : 'bg-white text-black'}`}>
-        <div className={`flex text-xs border-b select-none ${theme === 'dark' ? 'border-[#444] bg-[#333]' : 'border-gray-200 bg-white'}`}>
-            <span className={`px-2 py-1 cursor-default ${theme === 'dark' ? 'hover:bg-[#444]' : 'hover:bg-gray-100'}`}>File</span>
-            <span className={`px-2 py-1 cursor-default ${theme === 'dark' ? 'hover:bg-[#444]' : 'hover:bg-gray-100'}`}>Edit</span>
-            <span className={`px-2 py-1 cursor-default ${theme === 'dark' ? 'hover:bg-[#444]' : 'hover:bg-gray-100'}`}>Format</span>
-            <span className={`px-2 py-1 cursor-default ${theme === 'dark' ? 'hover:bg-[#444]' : 'hover:bg-gray-100'}`}>View</span>
-            <span className={`px-2 py-1 cursor-default ${theme === 'dark' ? 'hover:bg-[#444]' : 'hover:bg-gray-100'}`}>Help</span>
+    <div className={`flex flex-col h-full ${theme === 'dark' ? 'bg-[#282828] text-white' : 'bg-white text-gray-900'}`}>
+        <div className={`flex gap-4 p-1 text-xs border-b ${theme === 'dark' ? 'border-[#444] bg-[#333]' : 'border-gray-200 bg-white'}`}>
+            <span>File</span><span>Edit</span><span>Format</span><span>View</span><span>Help</span>
         </div>
-        <textarea 
-            className={`flex-1 resize-none border-none outline-none p-1 font-mono text-sm overflow-auto ${theme === 'dark' ? 'bg-[#1e1e1e] text-gray-200' : 'bg-white text-black'}`}
-            spellCheck={false} 
-            autoFocus
-            placeholder="Type something..."
-        />
-        <div className={`border-t px-2 py-0.5 text-xs text-right select-none flex justify-between ${theme === 'dark' ? 'bg-[#333] border-[#444] text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
-            <span>UTF-8</span>
+        <textarea className={`flex-1 resize-none p-2 outline-none font-mono text-sm bg-transparent border-none ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`} placeholder="Type here..." spellCheck={false}/>
+        <div className={`flex justify-between px-2 py-0.5 text-xs ${theme === 'dark' ? 'bg-[#333] text-gray-400' : 'bg-[#f0f0f0] text-gray-600'}`}>
             <span>Ln 1, Col 1</span>
+            <span>UTF-8</span>
         </div>
     </div>
 );
 
 const PaintApp = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [color, setColor] = useState('#000000');
-    const [size, setSize] = useState(2);
+    const [color, setColor] = useState("#000000");
     const [isDrawing, setIsDrawing] = useState(false);
 
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (canvas) {
-            canvas.width = canvas.parentElement?.clientWidth || 600;
-            canvas.height = canvas.parentElement?.clientHeight || 400;
+        if(canvas) {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
             const ctx = canvas.getContext('2d');
             if(ctx) {
                 ctx.fillStyle = "white";
@@ -476,252 +650,219 @@ const PaintApp = () => {
         }
     }, []);
 
-    const startDraw = (e: React.MouseEvent) => {
-        setIsDrawing(true);
-        draw(e);
-    };
-    
-    const stopDraw = () => {
-        setIsDrawing(false);
-        const ctx = canvasRef.current?.getContext('2d');
-        if (ctx) ctx.beginPath();
-    };
-
     const draw = (e: React.MouseEvent) => {
-        if (!isDrawing) return;
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (!canvas || !ctx) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        ctx.lineWidth = size;
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = color;
-
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-    };
-
-    return (
-        <div className="flex flex-col h-full bg-[#f0f0f0] text-gray-900">
-             <div className="h-24 bg-[#f5f6f7] border-b border-gray-300 flex items-center px-4 gap-6 select-none">
-                 <div className="flex flex-col gap-2">
-                     <span className="text-xs text-gray-500 text-center">Brushes</span>
-                     <div className="flex gap-1">
-                        {[2, 4, 6, 8, 12].map(s => (
-                            <button key={s} onClick={() => setSize(s)} className={`w-8 h-8 rounded border flex items-center justify-center ${size === s ? 'bg-blue-200 border-blue-400' : 'bg-white border-gray-300'}`}>
-                                <div className="bg-black rounded-full" style={{width: s, height: s}}></div>
-                            </button>
-                        ))}
-                     </div>
-                 </div>
-                 <div className="w-px h-16 bg-gray-300"></div>
-                 <div className="flex flex-col gap-2">
-                     <span className="text-xs text-gray-500 text-center">Colors</span>
-                     <div className="grid grid-cols-5 gap-1">
-                        {['#000000', '#7f7f7f', '#880015', '#ed1c24', '#ff7f27', '#fff200', '#22b14c', '#00a2e8', '#3f48cc', '#a349a4'].map(c => (
-                            <button key={c} onClick={() => setColor(c)} className={`w-6 h-6 border ${color === c ? 'ring-2 ring-blue-400 z-10' : 'border-gray-400'}`} style={{backgroundColor: c}}></button>
-                        ))}
-                     </div>
-                 </div>
-             </div>
-             <div className="flex-1 overflow-hidden bg-gray-200 p-4 relative cursor-crosshair">
-                 <canvas 
-                    ref={canvasRef}
-                    onMouseDown={startDraw}
-                    onMouseUp={stopDraw}
-                    onMouseLeave={stopDraw}
-                    onMouseMove={draw}
-                    className="bg-white shadow-lg"
-                 />
-             </div>
-        </div>
-    )
-}
-
-const TaskManagerApp = ({ openWindows, onCloseWindow, onBsod }: { openWindows: DesktopWindow[], onCloseWindow: (id: string) => void, onBsod: () => void }) => {
-    const [activeTab, setActiveTab] = useState('processes');
-    const [cpuHistory, setCpuHistory] = useState<number[]>(new Array(40).fill(0));
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-
-    // Mock CPU Graph
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setCpuHistory(prev => {
-                const newVal = Math.random() * 30 + 10; // 10-40% usage random
-                const newHist = [...prev.slice(1), newVal];
-                return newHist;
-            });
-        }, 1000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const systemProcesses = [
-        { id: 'sys1', title: 'System', type: 'system', icon: <Settings size={14}/>, mem: '124 MB', cpu: '1.2%' },
-        { id: 'sys2', title: 'Desktop Window Manager', type: 'system', icon: <Layers size={14}/>, mem: '450 MB', cpu: '5.4%' },
-        { id: 'sys3', title: 'Windows Explorer', type: 'system', icon: <Folder size={14}/>, mem: '80 MB', cpu: '0.1%' },
-        { id: 'sys4', title: 'Service Host: Local System', type: 'system', icon: <Settings size={14}/>, mem: '32 MB', cpu: '0.0%' },
-    ];
-
-    const allProcs = [
-        ...openWindows.map(w => ({ id: w.id, title: w.title, type: 'app', icon: w.icon, mem: `${Math.floor(Math.random() * 200 + 50)} MB`, cpu: '0.5%' })),
-        ...systemProcesses
-    ];
-
-    const handleEndTask = () => {
-        if (!selectedId) return;
-        if (selectedId.startsWith('sys')) {
-             if(selectedId === 'sys3') {
-                // Kill explorer - could reload desktop, but for sim let's just do nothing or flicker
-                alert("Windows Explorer restarting...");
-             } else {
-                 playSound('error');
-                 onBsod(); // Kill system process = BSOD
-             }
-        } else {
-            onCloseWindow(selectedId);
+        if(!isDrawing || !canvasRef.current) return;
+        const ctx = canvasRef.current.getContext('2d');
+        if(ctx) {
+            const rect = canvasRef.current.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
         }
     };
 
     return (
-        <div className="flex flex-col h-full bg-white text-gray-900 text-sm font-sans select-none">
-            <div className="flex gap-1 p-2 border-b border-gray-200 text-xs text-gray-800">
-                <button onClick={() => setActiveTab('processes')} className={`px-3 py-1 rounded hover:bg-gray-100 ${activeTab === 'processes' ? 'bg-gray-200 font-semibold' : ''}`}>Processes</button>
-                <button onClick={() => setActiveTab('performance')} className={`px-3 py-1 rounded hover:bg-gray-100 ${activeTab === 'performance' ? 'bg-gray-200 font-semibold' : ''}`}>Performance</button>
+        <div className="flex flex-col h-full bg-[#f0f0f0]">
+            <div className="h-24 bg-[#f5f6f7] border-b border-gray-300 flex items-center px-4 gap-4 shadow-sm">
+                <div className="flex flex-col items-center gap-1 border-r pr-4">
+                     <div className="w-8 h-8 bg-white border border-black cursor-pointer"></div>
+                     <span className="text-xs">Paste</span>
+                </div>
+                <div className="flex gap-1 border-r pr-4">
+                     {['#000', '#888', '#fff', '#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f'].map(c => (
+                         <div key={c} onClick={() => setColor(c)} className={`w-6 h-6 border cursor-pointer ${color === c ? 'ring-2 ring-blue-400' : 'border-gray-400'}`} style={{backgroundColor: c}}></div>
+                     ))}
+                </div>
             </div>
-            
-            {activeTab === 'processes' && (
-                <>
-                <div className="flex bg-gray-50 border-b border-gray-200 text-xs text-gray-500 py-1 px-2">
-                    <div className="flex-1">Name</div>
-                    <div className="w-16 text-right">CPU</div>
-                    <div className="w-20 text-right">Memory</div>
-                </div>
-                <div className="flex-1 overflow-y-auto">
-                    {allProcs.map(p => (
-                        <div 
-                            key={p.id} 
-                            onClick={() => setSelectedId(p.id)}
-                            className={`flex items-center px-2 py-1 gap-2 cursor-default ${selectedId === p.id ? 'bg-blue-100' : 'hover:bg-gray-50'}`}
-                        >
-                            <div className="flex-1 flex items-center gap-2 truncate">
-                                <span className="text-gray-500">{p.icon}</span>
-                                <span className="text-gray-900">{p.title}</span>
-                            </div>
-                            <div className="w-16 text-right text-gray-600">{p.cpu}</div>
-                            <div className="w-20 text-right text-gray-600">{p.mem}</div>
-                        </div>
-                    ))}
-                </div>
-                <div className="p-2 border-t border-gray-200 flex justify-end bg-gray-50">
-                    <button 
-                        onClick={handleEndTask}
-                        disabled={!selectedId}
-                        className="px-4 py-1.5 bg-white border border-gray-300 hover:bg-gray-100 disabled:opacity-50 text-xs rounded shadow-sm text-gray-900"
-                    >
-                        End task
-                    </button>
-                </div>
-                </>
-            )}
-
-            {activeTab === 'performance' && (
-                <div className="flex h-full">
-                    <div className="w-32 bg-gray-50 border-r border-gray-200 p-2 flex flex-col gap-2">
-                        <div className="bg-blue-50 border border-blue-200 p-2 rounded cursor-pointer">
-                            <div className="font-bold text-blue-700 text-xs">CPU</div>
-                            <div className="text-xl font-light text-gray-900">{cpuHistory[cpuHistory.length-1].toFixed(0)}%</div>
-                        </div>
-                        <div className="p-2 rounded hover:bg-gray-100 cursor-pointer text-gray-600">
-                             <div className="font-bold text-xs">Memory</div>
-                             <div className="text-sm">4.2/16.0 GB</div>
-                        </div>
-                    </div>
-                    <div className="flex-1 p-4 flex flex-col">
-                         <div className="flex justify-between items-end mb-2">
-                             <div className="text-lg text-gray-800">CPU</div>
-                             <div className="text-xs text-gray-500">Virtual CPU @ 3.50GHz</div>
-                         </div>
-                         <div className="flex-1 border border-gray-300 bg-white relative">
-                             <div className="absolute inset-0 flex items-end">
-                                 <svg className="w-full h-full" preserveAspectRatio="none">
-                                     <polyline 
-                                        fill="none" 
-                                        stroke="#0078D7" 
-                                        strokeWidth="1" 
-                                        points={cpuHistory.map((val, i) => `${(i / (cpuHistory.length - 1)) * 100},${100 - val}`).join(' ')} 
-                                        vectorEffect="non-scaling-stroke"
-                                     />
-                                     <polygon 
-                                        fill="#0078D7" 
-                                        fillOpacity="0.1" 
-                                        points={`0,100 ${cpuHistory.map((val, i) => `${(i / (cpuHistory.length - 1)) * 100},${100 - val}`).join(' ')} 100,100`} 
-                                     />
-                                 </svg>
-                             </div>
-                             {/* Grid lines */}
-                             <div className="absolute inset-0 grid grid-cols-4 grid-rows-4 pointer-events-none">
-                                 {[...Array(16)].map((_, i) => <div key={i} className="border-r border-b border-gray-100 border-dashed"></div>)}
-                             </div>
-                         </div>
-                         <div className="flex justify-between text-xs text-gray-400 mt-1">
-                             <span>60 seconds</span>
-                             <span>0</span>
-                         </div>
-                    </div>
-                </div>
-            )}
+            <div className="flex-1 p-4 overflow-auto bg-[#c0c0c0]">
+                 <canvas 
+                    ref={canvasRef} 
+                    className="bg-white shadow-lg cursor-crosshair" 
+                    style={{width: '100%', height: '100%'}}
+                    onMouseDown={(e) => {
+                        setIsDrawing(true);
+                        const ctx = canvasRef.current?.getContext('2d');
+                        const rect = canvasRef.current?.getBoundingClientRect();
+                        if(ctx && rect) {
+                            ctx.beginPath();
+                            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+                        }
+                    }}
+                    onMouseUp={() => setIsDrawing(false)}
+                    onMouseMove={draw}
+                 />
+            </div>
         </div>
     )
-}
+};
 
-const CalculatorApp = () => {
-    // ... (Existing Calculator Code - no changes needed for logic, styled nicely already)
-    const [display, setDisplay] = useState('0');
-    const [prev, setPrev] = useState<string | null>(null);
-    const [op, setOp] = useState<string | null>(null);
-    const [newNum, setNewNum] = useState(true);
-    const handleNum = (n: string) => { if (newNum) { setDisplay(n); setNewNum(false); } else { setDisplay(display === '0' ? n : display + n); } };
-    const handleOp = (o: string) => { setPrev(display); setOp(o); setNewNum(true); };
-    const handleEq = () => { if (!prev || !op) return; const cur = parseFloat(display); const p = parseFloat(prev); let res = 0; if (op === '+') res = p + cur; if (op === '-') res = p - cur; if (op === '*') res = p * cur; if (op === '/') res = p / cur; setDisplay(res.toString().slice(0, 12)); setOp(null); setPrev(null); setNewNum(true); };
-    const handleClear = () => { setDisplay('0'); setPrev(null); setOp(null); setNewNum(true); };
-    const btnClass = "flex items-center justify-center bg-white hover:bg-gray-100 rounded text-sm font-medium border border-gray-100 transition-colors active:bg-gray-200 text-black";
-    const opClass = "flex items-center justify-center bg-gray-50 hover:bg-gray-200 rounded text-sm font-medium border border-gray-100 transition-colors text-black";
-    const eqClass = "flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded text-sm font-medium transition-colors";
-    return (
-        <div className="h-full bg-[#F3F3F3] flex flex-col p-2 select-none text-black">
-            <div className="h-16 mb-2 flex items-end justify-end text-3xl font-light px-2 overflow-hidden">{display}</div>
-            <div className="flex-1 grid grid-cols-4 gap-1">
-                <button onClick={handleClear} className={`${opClass} col-span-2`}>C</button>
-                <button className={opClass}>%</button>
-                <button onClick={() => handleOp('/')} className={opClass}>÷</button>
-                <button onClick={() => handleNum('7')} className={btnClass}>7</button>
-                <button onClick={() => handleNum('8')} className={btnClass}>8</button>
-                <button onClick={() => handleNum('9')} className={btnClass}>9</button>
-                <button onClick={() => handleOp('*')} className={opClass}>×</button>
-                <button onClick={() => handleNum('4')} className={btnClass}>4</button>
-                <button onClick={() => handleNum('5')} className={btnClass}>5</button>
-                <button onClick={() => handleNum('6')} className={btnClass}>6</button>
-                <button onClick={() => handleOp('-')} className={opClass}>-</button>
-                <button onClick={() => handleNum('1')} className={btnClass}>1</button>
-                <button onClick={() => handleNum('2')} className={btnClass}>2</button>
-                <button onClick={() => handleNum('3')} className={btnClass}>3</button>
-                <button onClick={() => handleOp('+')} className={opClass}>+</button>
-                <button onClick={() => handleNum('0')} className={`${btnClass} col-span-2`}>0</button>
-                <button onClick={() => handleNum('.')} className={btnClass}>.</button>
-                <button onClick={handleEq} className={eqClass}>=</button>
+const RegEditApp = () => (
+    <div className="flex h-full bg-white text-gray-900 text-xs font-sans">
+        <div className="w-64 border-r border-gray-300 p-1 overflow-auto bg-white">
+            <div className="pl-0">Computer</div>
+            <div className="pl-4 flex items-center gap-1"><Folder size={12} className="text-yellow-500 fill-yellow-500"/> HKEY_CLASSES_ROOT</div>
+            <div className="pl-4 flex items-center gap-1"><Folder size={12} className="text-yellow-500 fill-yellow-500"/> HKEY_CURRENT_USER</div>
+            <div className="pl-8 flex items-center gap-1"><Folder size={12} className="text-yellow-500 fill-yellow-500"/> AppEvents</div>
+            <div className="pl-8 flex items-center gap-1"><Folder size={12} className="text-yellow-500 fill-yellow-500"/> Console</div>
+            <div className="pl-8 flex items-center gap-1 bg-blue-100 border border-blue-200"><Folder size={12} className="text-yellow-500 fill-yellow-500"/> Control Panel</div>
+            <div className="pl-8 flex items-center gap-1"><Folder size={12} className="text-yellow-500 fill-yellow-500"/> Environment</div>
+            <div className="pl-8 flex items-center gap-1"><Folder size={12} className="text-yellow-500 fill-yellow-500"/> Software</div>
+            <div className="pl-4 flex items-center gap-1"><Folder size={12} className="text-yellow-500 fill-yellow-500"/> HKEY_LOCAL_MACHINE</div>
+            <div className="pl-4 flex items-center gap-1"><Folder size={12} className="text-yellow-500 fill-yellow-500"/> HKEY_USERS</div>
+            <div className="pl-4 flex items-center gap-1"><Folder size={12} className="text-yellow-500 fill-yellow-500"/> HKEY_CURRENT_CONFIG</div>
+        </div>
+        <div className="flex-1 flex flex-col">
+            <div className="border-b border-gray-300 px-2 py-1 flex gap-4 text-gray-500">
+                <span>Name</span>
+                <span>Type</span>
+                <span>Data</span>
+            </div>
+            <div className="flex-1 overflow-auto bg-white p-1">
+                 <div className="grid grid-cols-[1fr_1fr_2fr] gap-2 px-1 hover:bg-blue-50">
+                     <span className="text-red-500">ab</span> (Default)
+                     <span>REG_SZ</span>
+                     <span>(value not set)</span>
+                 </div>
+                 <div className="grid grid-cols-[1fr_1fr_2fr] gap-2 px-1 hover:bg-blue-50">
+                     <span className="text-blue-500">010</span> CurrentUser
+                     <span>REG_SZ</span>
+                     <span>User</span>
+                 </div>
+                 <div className="grid grid-cols-[1fr_1fr_2fr] gap-2 px-1 hover:bg-blue-50">
+                     <span className="text-blue-500">011</span> WaitToKillAppTimeout
+                     <span>REG_SZ</span>
+                     <span>20000</span>
+                 </div>
+            </div>
+            <div className="border-t border-gray-300 p-0.5 text-gray-500 bg-[#f0f0f0]">
+                Computer\HKEY_CURRENT_USER\Control Panel
             </div>
         </div>
-    );
+    </div>
+);
+
+const MinesweeperApp = () => {
+    // Visual only
+    return (
+        <div className="w-full h-full bg-[#c0c0c0] flex flex-col p-1 border-2 border-white border-r-gray-500 border-b-gray-500">
+             <div className="flex justify-between items-center bg-[#c0c0c0] border-2 border-gray-500 border-r-white border-b-white p-1 mb-1">
+                 <div className="bg-black text-red-600 font-mono text-xl px-1 border border-gray-500">010</div>
+                 <button className="border-2 border-white border-r-gray-500 border-b-gray-500 active:border-gray-500 active:border-r-white active:border-b-white p-1"><Smile className="text-yellow-400 fill-black bg-black rounded-full" size={16}/></button>
+                 <div className="bg-black text-red-600 font-mono text-xl px-1 border border-gray-500">999</div>
+             </div>
+             <div className="flex-1 border-2 border-gray-500 border-r-white border-b-white grid grid-cols-9 grid-rows-9">
+                 {[...Array(81)].map((_,i) => (
+                     <button key={i} className="border border-white border-r-gray-500 border-b-gray-500 bg-[#c0c0c0] active:border-gray-400"></button>
+                 ))}
+             </div>
+        </div>
+    )
+};
+
+const BrowserApp = () => {
+    const [url, setUrl] = useState("https://www.google.com");
+    return (
+        <div className="flex flex-col h-full bg-white">
+            <div className="flex items-center gap-2 p-2 bg-[#f3f3f3] border-b border-gray-300">
+                <div className="flex gap-2">
+                    <button className="p-1 hover:bg-gray-200 rounded"><ArrowLeft size={16}/></button>
+                    <button className="p-1 hover:bg-gray-200 rounded rotate-180"><ArrowLeft size={16}/></button>
+                    <button className="p-1 hover:bg-gray-200 rounded"><RefreshCcw size={14}/></button>
+                </div>
+                <div className="flex-1 bg-white border border-gray-300 rounded-full px-4 py-1.5 flex items-center gap-2 text-sm shadow-sm">
+                    <Lock size={12} className="text-green-600"/>
+                    <input className="flex-1 outline-none" value={url} onChange={e => setUrl(e.target.value)}/>
+                </div>
+            </div>
+            <div className="flex-1 flex flex-col items-center justify-center bg-white">
+                 <div className="text-4xl font-bold mb-4"><span className="text-blue-500">G</span><span className="text-red-500">o</span><span className="text-yellow-500">o</span><span className="text-blue-500">g</span><span className="text-green-500">l</span><span className="text-red-500">e</span></div>
+                 <div className="w-1/2 border border-gray-200 rounded-full px-4 py-3 shadow-sm hover:shadow-md transition-shadow flex items-center gap-2">
+                     <Search size={18} className="text-gray-400"/>
+                     <input className="flex-1 outline-none" placeholder="Search Google or type a URL"/>
+                     <Mic size={18} className="text-blue-500"/>
+                 </div>
+                 <div className="flex gap-4 mt-6">
+                     <button className="px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-transparent hover:border-gray-200 text-sm text-gray-800 rounded">Google Search</button>
+                     <button className="px-4 py-2 bg-gray-50 hover:bg-gray-100 border border-transparent hover:border-gray-200 text-sm text-gray-800 rounded">I'm Feeling Lucky</button>
+                 </div>
+            </div>
+        </div>
+    )
+};
+
+const QuickSettings = ({ isDark, setIsDark, bgImage }: { isDark: boolean, setIsDark: (v: boolean) => void, bgImage: string }) => {
+    return (
+        <div className={`absolute bottom-12 right-2 backdrop-blur-xl border w-80 p-4 rounded-lg shadow-2xl animate-in slide-in-from-bottom-10 duration-200 z-[10000] ${isDark ? 'bg-[#2d2d2d]/90 border-[#444] text-white' : 'bg-[#f3f3f3]/90 border-gray-300 text-gray-900'}`} onClick={e => e.stopPropagation()}>
+            <div className="grid grid-cols-3 gap-3 mb-6">
+                 <button className={`h-20 rounded flex flex-col items-start justify-end p-3 transition-colors ${isDark ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'}`}>
+                     <Wifi size={20} className="mb-auto"/>
+                     <span className="text-xs font-semibold">Wi-Fi</span>
+                 </button>
+                 <button className={`h-20 rounded flex flex-col items-start justify-end p-3 transition-colors ${isDark ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'}`}>
+                     <Bluetooth size={20} className="mb-auto"/>
+                     <span className="text-xs font-semibold">Bluetooth</span>
+                 </button>
+                 <button className={`h-20 rounded flex flex-col items-start justify-end p-3 transition-colors ${isDark ? 'bg-[#444] hover:bg-[#555]' : 'bg-white hover:bg-gray-100'}`}>
+                     <Plane size={20} className="mb-auto"/>
+                     <span className="text-xs font-semibold">Airplane</span>
+                 </button>
+                 <button className={`h-20 rounded flex flex-col items-start justify-end p-3 transition-colors ${isDark ? 'bg-[#444] hover:bg-[#555]' : 'bg-white hover:bg-gray-100'}`}>
+                     <BatteryCharging size={20} className="mb-auto"/>
+                     <span className="text-xs font-semibold">Saver</span>
+                 </button>
+                 <button onClick={() => setIsDark(!isDark)} className={`h-20 rounded flex flex-col items-start justify-end p-3 transition-colors ${isDark ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-100'}`}>
+                     <Moon size={20} className="mb-auto"/>
+                     <span className="text-xs font-semibold">Dark Mode</span>
+                 </button>
+                 <button className={`h-20 rounded flex flex-col items-start justify-end p-3 transition-colors ${isDark ? 'bg-[#444] hover:bg-[#555]' : 'bg-white hover:bg-gray-100'}`}>
+                     <Accessibility size={20} className="mb-auto"/>
+                     <span className="text-xs font-semibold">Access...</span>
+                 </button>
+            </div>
+            <div className="space-y-4 mb-4">
+                 <div className="flex gap-4 items-center">
+                     <Sun size={18} className="text-gray-500"/>
+                     <input type="range" className="flex-1 accent-blue-500 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"/>
+                 </div>
+                 <div className="flex gap-4 items-center">
+                     <Volume2 size={18} className="text-gray-500"/>
+                     <input type="range" className="flex-1 accent-blue-500 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"/>
+                 </div>
+            </div>
+            <div className="flex justify-between items-center text-xs text-gray-500 pt-2 border-t border-gray-300/20">
+                <div className="flex items-center gap-2">
+                    <Battery size={14}/> 84%
+                </div>
+                <div className="cursor-pointer hover:text-blue-500"><Settings size={14}/></div>
+            </div>
+        </div>
+    )
 };
 
 const SettingsApp = ({ bgImage, setBgImage, theme, setTheme }: { bgImage: string, setBgImage: (url: string) => void, theme: 'light'|'dark', setTheme: (t: 'light'|'dark') => void }) => {
     const [tab, setTab] = useState('system');
+    // Network State
+    const [ipConfig, setIpConfig] = useState({ ip: '192.168.1.105', sub: '255.255.255.0', gate: '192.168.1.1', dns: '8.8.8.8' });
+    const [editIp, setEditIp] = useState(false);
+    const [tempIp, setTempIp] = useState(ipConfig);
+    const [diagnosing, setDiagnosing] = useState(false);
+    const [diagResult, setDiagResult] = useState<string | null>(null);
+
+    // Mock Installed Apps
+    const installedApps = [
+        { name: "Microsoft Office 365", publisher: "Microsoft Corporation", date: new Date().toLocaleDateString(), size: "2.4 GB", version: "16.0.14326" },
+        { name: "Google Chrome", publisher: "Google LLC", date: "1/10/2024", size: "350 MB", version: "120.0.6099" },
+        { name: "Microsoft Edge", publisher: "Microsoft Corporation", date: "1/10/2024", size: "450 MB", version: "120.0.2210" },
+        { name: "Windows Security", publisher: "Microsoft Corporation", date: "1/1/2024", size: "12 MB", version: "1.0.0.0" },
+        { name: "Calculator", publisher: "Microsoft Corporation", date: "1/1/2024", size: "2 MB", version: "11.2307" },
+        { name: "Notepad", publisher: "Microsoft Corporation", date: "1/1/2024", size: "1.5 MB", version: "11.2311" },
+        { name: "Photos", publisher: "Microsoft Corporation", date: "1/5/2024", size: "250 MB", version: "2024.11070" },
+        { name: "Spotify", publisher: "Spotify AB", date: "1/12/2024", size: "180 MB", version: "1.2.26" },
+        { name: "Visual Studio Code", publisher: "Microsoft Corporation", date: "1/15/2024", size: "380 MB", version: "1.85.1" },
+        { name: "Zoom", publisher: "Zoom Video Communications", date: "1/18/2024", size: "150 MB", version: "5.17.0" },
+    ];
+
     const wallpapers = [
         'https://picsum.photos/1920/1080?random=1',
         'https://picsum.photos/1920/1080?random=2',
@@ -733,12 +874,23 @@ const SettingsApp = ({ bgImage, setBgImage, theme, setTheme }: { bgImage: string
     const bgClass = isDark ? 'bg-[#202020] text-white' : 'bg-[#F0F0F0] text-gray-900';
     const cardClass = isDark ? 'bg-[#2b2b2b] border-[#444]' : 'bg-white border-gray-200';
 
+    const runDiagnosis = () => {
+        setDiagnosing(true);
+        setDiagResult(null);
+        setTimeout(() => {
+            setDiagnosing(false);
+            setDiagResult("Troubleshooting couldn't identify the problem.");
+        }, 3000);
+    };
+
     return (
         <div className={`flex h-full text-sm ${bgClass}`}>
             <div className={`w-48 border-r p-4 flex flex-col gap-1 ${isDark ? 'border-[#333] bg-[#2b2b2b]' : 'border-gray-200 bg-white'}`}>
                 <div className="mb-4 font-bold text-lg px-2">Settings</div>
                 <button onClick={() => setTab('system')} className={`text-left px-3 py-2 rounded ${tab === 'system' ? (isDark ? 'bg-[#333]' : 'bg-gray-100') : 'hover:opacity-70'}`}>System</button>
+                <button onClick={() => setTab('apps')} className={`text-left px-3 py-2 rounded ${tab === 'apps' ? (isDark ? 'bg-[#333]' : 'bg-gray-100') : 'hover:opacity-70'}`}>Apps</button>
                 <button onClick={() => setTab('personalization')} className={`text-left px-3 py-2 rounded ${tab === 'personalization' ? (isDark ? 'bg-[#333]' : 'bg-gray-100') : 'hover:opacity-70'}`}>Personalization</button>
+                <button onClick={() => setTab('network')} className={`text-left px-3 py-2 rounded ${tab === 'network' ? (isDark ? 'bg-[#333]' : 'bg-gray-100') : 'hover:opacity-70'}`}>Network & internet</button>
             </div>
             <div className={`flex-1 p-8 overflow-y-auto ${isDark ? 'bg-[#1c1c1c]' : 'bg-[#FAFAFA]'}`}>
                 {tab === 'system' && (
@@ -762,6 +914,30 @@ const SettingsApp = ({ bgImage, setBgImage, theme, setTheme }: { bgImage: string
                                  <span className="font-semibold">Windows 11 Pro (Simulated)</span>
                              </div>
                          </div>
+                    </div>
+                )}
+                {tab === 'apps' && (
+                    <div className="max-w-3xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <h2 className="text-2xl font-light mb-6">Apps & features</h2>
+                        <div className={`border rounded shadow-sm ${cardClass}`}>
+                            <div className="grid grid-cols-[2fr_1fr_1fr_1fr] p-3 border-b font-semibold opacity-70 text-xs">
+                                <div>Name</div>
+                                <div>Publisher</div>
+                                <div>Date</div>
+                                <div className="text-right">Size</div>
+                            </div>
+                            {installedApps.map((app, i) => (
+                                <div key={i} className={`grid grid-cols-[2fr_1fr_1fr_1fr] p-3 border-b last:border-0 hover:bg-black/5 items-center text-xs ${isDark ? 'border-[#333]' : 'border-gray-100'}`}>
+                                    <div>
+                                        <div className="font-semibold text-sm">{app.name}</div>
+                                        <div className="opacity-60">{app.version}</div>
+                                    </div>
+                                    <div className="opacity-70">{app.publisher}</div>
+                                    <div className="opacity-70">{app.date}</div>
+                                    <div className="opacity-70 text-right">{app.size}</div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
                 {tab === 'personalization' && (
@@ -793,7 +969,80 @@ const SettingsApp = ({ bgImage, setBgImage, theme, setTheme }: { bgImage: string
                         </div>
                     </div>
                 )}
+                {tab === 'network' && (
+                    <div className="max-w-xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <h2 className="text-2xl font-light mb-6">Network & internet</h2>
+                        
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="relative">
+                                <Monitor size={48} className="text-gray-400"/>
+                                <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5 border-2 border-white"><CheckCircle size={12} className="text-white"/></div>
+                            </div>
+                            <div>
+                                <div className="font-semibold text-lg">Ethernet</div>
+                                <div className="text-sm text-gray-500">Connected</div>
+                            </div>
+                        </div>
+
+                        <div className={`p-6 border rounded shadow-sm mb-6 ${cardClass}`}>
+                            <div className="font-semibold mb-4 flex justify-between items-center">
+                                IP assignment
+                                <button onClick={() => { setEditIp(true); setTempIp(ipConfig); }} className="px-4 py-1 bg-gray-100 hover:bg-gray-200 border rounded text-xs text-black">Edit</button>
+                            </div>
+                            <div className="space-y-1 text-xs text-gray-500">
+                                <div>IPv4 address: <span className={isDark ? "text-gray-200" : "text-gray-900"}>{ipConfig.ip}</span></div>
+                                <div>IPv4 subnet mask: <span className={isDark ? "text-gray-200" : "text-gray-900"}>{ipConfig.sub}</span></div>
+                                <div>IPv4 gateway: <span className={isDark ? "text-gray-200" : "text-gray-900"}>{ipConfig.gate}</span></div>
+                                <div>IPv4 DNS servers: <span className={isDark ? "text-gray-200" : "text-gray-900"}>{ipConfig.dns}</span></div>
+                            </div>
+                        </div>
+
+                        <div className={`p-6 border rounded shadow-sm ${cardClass}`}>
+                            <div className="font-semibold mb-2">Network troubleshooter</div>
+                            <p className="text-xs text-gray-500 mb-4">Diagnose and fix network connection issues.</p>
+                            <button onClick={runDiagnosis} disabled={diagnosing} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 text-xs">
+                                {diagnosing ? 'Detecting problems...' : 'Run troubleshooter'}
+                            </button>
+                            {diagResult && (
+                                <div className="mt-4 p-3 bg-gray-100 border-l-4 border-blue-500 text-xs text-black">
+                                    {diagResult}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {/* IP Edit Modal */}
+            {editIp && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-[10050]">
+                    <div className={`p-6 rounded shadow-xl w-96 border ${cardClass}`}>
+                        <h3 className="font-semibold text-lg mb-4">Edit IP settings</h3>
+                        <div className="space-y-3 mb-6">
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 mb-1">IPv4 address</label>
+                                <input className="w-full border p-2 rounded text-sm text-black" value={tempIp.ip} onChange={e => setTempIp({...tempIp, ip: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 mb-1">Subnet mask</label>
+                                <input className="w-full border p-2 rounded text-sm text-black" value={tempIp.sub} onChange={e => setTempIp({...tempIp, sub: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 mb-1">Gateway</label>
+                                <input className="w-full border p-2 rounded text-sm text-black" value={tempIp.gate} onChange={e => setTempIp({...tempIp, gate: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 mb-1">Preferred DNS</label>
+                                <input className="w-full border p-2 rounded text-sm text-black" value={tempIp.dns} onChange={e => setTempIp({...tempIp, dns: e.target.value})} />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setEditIp(false)} className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded text-sm text-black">Cancel</button>
+                            <button onClick={() => { setIpConfig(tempIp); setEditIp(false); }} className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">Save</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -803,40 +1052,82 @@ const TerminalApp = ({ onBsod }: { onBsod: () => void }) => {
     const [input, setInput] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = async (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             const cmd = input.trim().toLowerCase();
             const newLines = [...lines, `C:\\Users\\User>${input}`];
-            if (cmd === 'cls') { setLines([]); setInput(""); return; }
-            else if (cmd === 'help') { newLines.push("DIR, CLS, ECHO, VER, COLOR, BSOD, EXIT, IPCONFIG, SYSTEMINFO"); }
-            else if (cmd === 'ver') { newLines.push("Microsoft Windows [Version 10.0.22621.1]"); }
-            else if (cmd === 'dir') { newLines.push(" Directory of C:\\Users\\User"); newLines.push("01/01/2025 <DIR> ."); newLines.push("01/01/2025 <DIR> .."); newLines.push("01/01/2025 <DIR> Documents"); }
-            else if (cmd === 'bsod') { onBsod(); return; }
-            else if (cmd === 'ipconfig') { 
-                newLines.push(""); 
-                newLines.push("Windows IP Configuration");
-                newLines.push("");
-                newLines.push("Ethernet adapter Ethernet:");
-                newLines.push("   Connection-specific DNS Suffix  . : winsim.local");
-                newLines.push("   IPv4 Address. . . . . . . . . . . : 192.168.1.105");
-                newLines.push("   Subnet Mask . . . . . . . . . . . : 255.255.255.0");
-                newLines.push("   Default Gateway . . . . . . . . . : 192.168.1.1");
-            }
-            else if (cmd === 'systeminfo') {
-                 newLines.push("");
-                 newLines.push("Host Name:                 DESKTOP-WINSIM");
-                 newLines.push("OS Name:                   Microsoft Windows 11 Pro");
-                 newLines.push("OS Version:                10.0.22621 N/A Build 22621");
-                 newLines.push("OS Manufacturer:           Microsoft Corporation");
-                 newLines.push("System Manufacturer:       WinSim Virtual Systems");
-                 newLines.push("System Type:               x64-based PC");
-                 newLines.push("Processor(s):              1 Processor(s) Installed.");
-            }
-            else if (cmd.startsWith('echo ')) { newLines.push(input.substring(5)); }
-            else if (cmd) { newLines.push(`'${cmd.split(' ')[0]}' is not recognized.`); }
-            newLines.push("");
+            
+            // Immediate update for user input
             setLines(newLines);
             setInput("");
+
+            const addToLines = (line: string) => {
+                setLines(prev => [...prev, line]);
+            };
+
+            const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+            if (cmd === 'cls') { setLines([]); return; }
+            else if (cmd === 'help') { addToLines("DIR, CLS, ECHO, VER, BSOD, EXIT, IPCONFIG, SYSTEMINFO, PING"); }
+            else if (cmd === 'ver') { addToLines("Microsoft Windows [Version 10.0.22621.1]"); }
+            else if (cmd === 'dir') { addToLines(" Directory of C:\\Users\\User"); addToLines("01/01/2025 <DIR> ."); addToLines("01/01/2025 <DIR> .."); addToLines("01/01/2025 <DIR> Documents"); }
+            else if (cmd === 'bsod') { onBsod(); return; }
+            else if (cmd === 'ipconfig') { 
+                addToLines(""); 
+                addToLines("Windows IP Configuration");
+                addToLines("");
+                addToLines("Ethernet adapter Ethernet:");
+                addToLines("   Connection-specific DNS Suffix  . : winsim.local");
+                addToLines("   IPv4 Address. . . . . . . . . . . : 192.168.1.105");
+                addToLines("   Subnet Mask . . . . . . . . . . . : 255.255.255.0");
+                addToLines("   Default Gateway . . . . . . . . . : 192.168.1.1");
+                addToLines("   DNS Servers . . . . . . . . . . . : 8.8.8.8");
+            }
+            else if (cmd.startsWith('ping ')) {
+                const host = input.split(' ')[1];
+                if (!host) {
+                    addToLines("Usage: ping <hostname>");
+                } else {
+                    const validHosts = ['google.com', 'microsoft.com', 'facebook.com', 'localhost', '127.0.0.1'];
+                    const ipMap: Record<string, string> = {
+                        'google.com': '142.250.190.46',
+                        'microsoft.com': '20.112.250.133',
+                        'facebook.com': '157.240.22.35',
+                        'localhost': '127.0.0.1',
+                        '127.0.0.1': '127.0.0.1'
+                    };
+                    const ip = ipMap[host.toLowerCase()] || '1.1.1.1';
+                    
+                    addToLines("");
+                    addToLines(`Pinging ${host} [${ip}] with 32 bytes of data:`);
+                    
+                    for(let i=0; i<4; i++) {
+                        await wait(800 + Math.random() * 400);
+                        const time = Math.floor(Math.random() * 20 + 10);
+                        addToLines(`Reply from ${ip}: bytes=32 time=${time}ms TTL=115`);
+                    }
+                    
+                    addToLines("");
+                    addToLines(`Ping statistics for ${ip}:`);
+                    addToLines("    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),");
+                    addToLines("Approximate round trip times in milli-seconds:");
+                    addToLines("    Minimum = 10ms, Maximum = 35ms, Average = 22ms");
+                }
+            }
+            else if (cmd === 'systeminfo') {
+                 addToLines("");
+                 addToLines("Host Name:                 DESKTOP-WINSIM");
+                 addToLines("OS Name:                   Microsoft Windows 11 Pro");
+                 addToLines("OS Version:                10.0.22621 N/A Build 22621");
+                 addToLines("OS Manufacturer:           Microsoft Corporation");
+                 addToLines("System Manufacturer:       WinSim Virtual Systems");
+                 addToLines("System Type:               x64-based PC");
+                 addToLines("Processor(s):              1 Processor(s) Installed.");
+            }
+            else if (cmd.startsWith('echo ')) { addToLines(input.substring(5)); }
+            else if (cmd) { addToLines(`'${cmd.split(' ')[0]}' is not recognized.`); }
+            
+            addToLines("");
         }
     };
 
@@ -853,7 +1144,7 @@ const TerminalApp = ({ onBsod }: { onBsod: () => void }) => {
     )
 }
 
-const ExplorerApp = ({ onBsod }: { onBsod: () => void }) => {
+const ExplorerApp = ({ onBsod, onRun }: { onBsod: () => void, onRun: (file: string) => void }) => {
     const [path, setPath] = useState<string[]>(["This PC"]);
     const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
@@ -880,7 +1171,9 @@ const ExplorerApp = ({ onBsod }: { onBsod: () => void }) => {
         "Documents": [
             { name: "Notes.txt", type: "file", icon: <FileText className="text-gray-500" size={32}/> },
         ],
-        "Downloads": [],
+        "Downloads": [
+            { name: "OfficeSetup.exe", type: "application", icon: <Download className="text-blue-500" size={32}/>, action: 'office-setup' }
+        ],
         "Users": [{ name: "User", type: "folder", icon: <Folder className="text-yellow-500" size={32}/> }]
     };
 
@@ -890,7 +1183,10 @@ const ExplorerApp = ({ onBsod }: { onBsod: () => void }) => {
     const items = fileSystem[currentFolder] || [];
 
     const handleNavigate = (item: any) => {
-        if (item.type === 'file') return; // Open file logic later
+        if (item.type === 'file' || item.type === 'application') {
+            if (item.action) onRun(item.action);
+            return; 
+        }
         setPath([...path, item.name]);
         setSelectedItem(null);
     };
@@ -985,6 +1281,7 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
     const [theme, setTheme] = useState<'light'|'dark'>('light');
     const [bsod, setBsod] = useState(false);
     const [runOpen, setRunOpen] = useState(false);
+    const [officeInstalled, setOfficeInstalled] = useState(false);
     
     // Dragging State
     const [dragState, setDragState] = useState<{id: string, startX: number, startY: number, initX: number, initY: number} | null>(null);
@@ -1023,7 +1320,12 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
         setTimeout(() => playSound('startup'), 500);
 
         const timer = setInterval(() => setTime(new Date()), 1000);
-        generateWelcomeMessage(username).then(setWelcomeMsg);
+        
+        generateWelcomeMessage(username).then(msg => {
+            setWelcomeMsg(msg);
+            // Auto dismiss welcome message
+            setTimeout(() => setWelcomeMsg(""), 5000);
+        });
         
         const handleClickOutside = () => {
             setContextMenu(null);
@@ -1126,15 +1428,30 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
         setContextMenu({ x: e.clientX, y: e.clientY });
     };
 
+    const handleOfficeInstall = () => {
+        setOfficeInstalled(true);
+        closeWindow('office-setup');
+        playSound('notification');
+        alert("Microsoft Office has been installed successfully!");
+    };
+
     // App Launchers
     const launchSettings = () => openWindow('settings', 'Settings', <Settings size={18} className="text-gray-500"/>, <SettingsApp bgImage={bgImage} setBgImage={setBgImage} theme={theme} setTheme={setTheme}/>);
     const launchCalc = () => openWindow('calc', 'Calculator', <Calculator size={18} className="text-orange-500"/>, <CalculatorApp />, 320, 480);
     const launchNotepad = () => openWindow('notepad', 'Notepad', <FileText size={18} className="text-blue-500"/>, <NotepadApp theme={theme} />, 600, 400);
     const launchTerminal = () => openWindow('cmd', 'Command Prompt', <Terminal size={18} className="text-gray-500"/>, <TerminalApp onBsod={() => setBsod(true)}/>, 600, 350);
-    const launchExplorer = () => openWindow('pc', 'File Explorer', <Folder size={18} className="text-yellow-500"/>, <ExplorerApp onBsod={() => setBsod(true)}/>, 800, 500);
+    const launchExplorer = () => openWindow('pc', 'File Explorer', <Folder size={18} className="text-yellow-500"/>, <ExplorerApp onBsod={() => setBsod(true)} onRun={handleRunCmd}/>, 800, 500);
     const launchPaint = () => openWindow('paint', 'Paint', <Palette size={18} className="text-purple-500"/>, <PaintApp/>, 800, 600);
     const launchRegEdit = () => openWindow('regedit', 'Registry Editor', <Database size={18} className="text-blue-400"/>, <RegEditApp />, 800, 500);
     const launchMinesweeper = () => openWindow('minesweeper', 'Minesweeper', <Bomb size={18} className="text-black"/>, <MinesweeperApp />, 300, 360);
+    const launchSecurity = () => openWindow('security', 'Windows Security', <Shield size={18} className="text-blue-600"/>, <SecurityApp />, 800, 500);
+    const launchMail = () => openWindow('mail', 'Mail', <Mail size={18} className="text-blue-500"/>, <MailApp />, 800, 500);
+    
+    // New Office Apps
+    const launchWord = () => openWindow('word', 'Word', <FileText size={18} className="text-blue-700"/>, <WordApp />, 900, 600);
+    const launchExcel = () => openWindow('excel', 'Excel', <Grid3X3 size={18} className="text-green-700"/>, <ExcelApp />, 900, 600);
+    const launchPowerPoint = () => openWindow('ppt', 'PowerPoint', <Projector size={18} className="text-orange-600"/>, <PowerPointApp />, 900, 600);
+    const launchOfficeSetup = () => openWindow('office-setup', 'Office Installer', <Download size={18} className="text-orange-600"/>, <OfficeInstallerApp onComplete={handleOfficeInstall} />, 400, 200);
 
     const launchEdge = () => openWindow('edge', 'Microsoft Edge', <div className="font-bold text-blue-500">e</div>, <BrowserApp/>, 1000, 600);
     
@@ -1169,6 +1486,12 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
         else if (c === 'explorer') launchExplorer();
         else if (c === 'regedit') launchRegEdit();
         else if (c === 'minesweeper' || c === 'winmine') launchMinesweeper();
+        else if (c === 'security') launchSecurity();
+        else if (c === 'mail') launchMail();
+        else if (c === 'word' || c === 'winword') { if (officeInstalled) launchWord(); else alert("Word is not installed."); }
+        else if (c === 'excel') { if (officeInstalled) launchExcel(); else alert("Excel is not installed."); }
+        else if (c === 'powerpoint' || c === 'powerpnt') { if (officeInstalled) launchPowerPoint(); else alert("PowerPoint is not installed."); }
+        else if (c === 'office-setup') launchOfficeSetup();
         else if (c === 'winver') {
             openWindow('winver', 'About Windows', <Info size={18} className="text-blue-500"/>, (
                 <div className="p-8 bg-white h-full flex flex-col gap-4 text-gray-900">
@@ -1367,6 +1690,10 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
                                      <div className="w-10 h-10 bg-blue-500 text-white rounded flex items-center justify-center font-bold text-xl">e</div>
                                      <div className="text-[11px]">Edge</div>
                                  </div>
+                                 <div onClick={launchMail} className={`flex flex-col items-center gap-2 p-2 rounded cursor-pointer transition-colors ${itemHoverClass}`}>
+                                     <div className="w-10 h-10 bg-blue-500 text-white rounded flex items-center justify-center"><Mail/></div>
+                                     <div className="text-[11px]">Mail</div>
+                                 </div>
                                  <div onClick={launchSettings} className={`flex flex-col items-center gap-2 p-2 rounded cursor-pointer transition-colors ${itemHoverClass}`}>
                                      <div className="w-10 h-10 bg-gray-600 text-white rounded flex items-center justify-center"><Settings/></div>
                                      <div className="text-[11px]">Settings</div>
@@ -1387,14 +1714,28 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
                                      <div className="w-10 h-10 bg-blue-600 text-white rounded flex items-center justify-center"><Code/></div>
                                      <div className="text-[11px]">VS Code</div>
                                  </div>
-                                 <div onClick={launchTaskMgr} className={`flex flex-col items-center gap-2 p-2 rounded cursor-pointer transition-colors ${itemHoverClass}`}>
-                                     <div className="w-10 h-10 bg-green-600 text-white rounded flex items-center justify-center"><Activity/></div>
-                                     <div className="text-[11px]">Task Manager</div>
+                                 <div onClick={launchSecurity} className={`flex flex-col items-center gap-2 p-2 rounded cursor-pointer transition-colors ${itemHoverClass}`}>
+                                     <div className="w-10 h-10 bg-blue-700 text-white rounded flex items-center justify-center"><Shield/></div>
+                                     <div className="text-[11px]">Security</div>
                                  </div>
-                                 <div onClick={launchMinesweeper} className={`flex flex-col items-center gap-2 p-2 rounded cursor-pointer transition-colors ${itemHoverClass}`}>
-                                     <div className="w-10 h-10 bg-white border border-gray-300 rounded flex items-center justify-center"><Bomb size={20} className="text-black"/></div>
-                                     <div className="text-[11px]">Minesweeper</div>
-                                 </div>
+                                 
+                                 {/* Dynamic Office Apps */}
+                                 {officeInstalled && (
+                                     <>
+                                        <div onClick={launchWord} className={`flex flex-col items-center gap-2 p-2 rounded cursor-pointer transition-colors ${itemHoverClass}`}>
+                                            <div className="w-10 h-10 bg-[#2B579A] text-white rounded flex items-center justify-center font-bold text-xl">W</div>
+                                            <div className="text-[11px]">Word</div>
+                                        </div>
+                                        <div onClick={launchExcel} className={`flex flex-col items-center gap-2 p-2 rounded cursor-pointer transition-colors ${itemHoverClass}`}>
+                                            <div className="w-10 h-10 bg-[#217346] text-white rounded flex items-center justify-center font-bold text-xl">X</div>
+                                            <div className="text-[11px]">Excel</div>
+                                        </div>
+                                        <div onClick={launchPowerPoint} className={`flex flex-col items-center gap-2 p-2 rounded cursor-pointer transition-colors ${itemHoverClass}`}>
+                                            <div className="w-10 h-10 bg-[#D24726] text-white rounded flex items-center justify-center font-bold text-xl">P</div>
+                                            <div className="text-[11px]">PowerPoint</div>
+                                        </div>
+                                     </>
+                                 )}
                              </div>
                          </div>
                          <div className={`w-1/3 border-l pl-6 flex flex-col ${isDark ? 'border-[#444]' : ''}`}>

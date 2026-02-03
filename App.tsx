@@ -6,12 +6,13 @@ import { SetupWizard } from './components/screens/SetupWizard';
 import { OOBE } from './components/screens/OOBE';
 import { Desktop } from './components/screens/Desktop';
 import { ContextualHelp } from './components/ui/ContextualHelp';
-import { AlertTriangle, Power, Maximize2 } from 'lucide-react';
+import { AlertTriangle, Power, Maximize2, ChevronDown } from 'lucide-react';
 import { playSound } from './services/soundService';
 
 const App: React.FC = () => {
   // Simulation State
   const [hasStarted, setHasStarted] = useState(false);
+  const [startPoint, setStartPoint] = useState<InstallState>(InstallState.MEDIA_CREATOR);
   const [currentState, setCurrentState] = useState<InstallState>(InstallState.MEDIA_CREATOR);
   const [userData, setUserData] = useState<{username: string}>({ username: "User" });
   const [bootError, setBootError] = useState<string | null>(null);
@@ -35,8 +36,22 @@ const App: React.FC = () => {
         console.error("Error attempting to enable full-screen mode:", err);
     }
     
+    // Auto-configure state if skipping steps
+    if (startPoint !== InstallState.MEDIA_CREATOR) {
+        // Assume valid media was created if we skip the creator
+        if (!mediaConfig) {
+            setMediaConfig({
+                osVersion: 'Windows 11',
+                partitionScheme: 'GPT',
+                label: 'WINSIM_USB',
+                isCreated: true
+            });
+        }
+    }
+
     // Resume audio context if it was suspended (browser policy)
     playSound('click');
+    setCurrentState(startPoint);
     setHasStarted(true);
   };
 
@@ -87,25 +102,52 @@ const App: React.FC = () => {
       // 0. Power On Screen (Landing Page)
       if (!hasStarted) {
           return (
-              <div className="w-full h-full bg-[#111] flex flex-col items-center justify-center text-gray-300 font-sans select-none">
-                  <div className="mb-8 relative group cursor-pointer" onClick={handlePowerOn}>
-                      <div className="w-24 h-24 rounded-full border-4 border-gray-600 flex items-center justify-center group-hover:border-blue-500 group-hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all duration-500 bg-[#1a1a1a]">
-                          <Power size={48} className="text-gray-500 group-hover:text-blue-400 transition-colors duration-500" />
+              <div className="w-full h-full bg-[#111] flex flex-col items-center justify-center text-gray-300 font-sans select-none relative">
+                  <div className="flex flex-col items-center z-10">
+                      <div className="mb-8 relative group cursor-pointer" onClick={handlePowerOn}>
+                          <div className="w-24 h-24 rounded-full border-4 border-gray-600 flex items-center justify-center group-hover:border-blue-500 group-hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all duration-500 bg-[#1a1a1a]">
+                              <Power size={48} className="text-gray-500 group-hover:text-blue-400 transition-colors duration-500" />
+                          </div>
                       </div>
+                      <h1 className="text-3xl font-light tracking-widest uppercase mb-2 text-white">WinSim</h1>
+                      <p className="text-sm text-gray-500 mb-12">OS Installation Simulator</p>
+                      
+                      {/* Jump Selector */}
+                      <div className="mb-8 w-64 relative">
+                          <label className="block text-[10px] text-gray-500 uppercase tracking-widest mb-2 text-center">Start Simulation From</label>
+                          <div className="relative">
+                              <select 
+                                value={startPoint}
+                                onChange={(e) => setStartPoint(e.target.value as InstallState)}
+                                className="w-full appearance-none bg-[#222] border border-gray-700 text-gray-300 text-sm py-3 pl-4 pr-10 rounded-md outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer hover:bg-[#2a2a2a] transition-colors shadow-lg"
+                              >
+                                  <option value={InstallState.MEDIA_CREATOR}>Create Installation Media</option>
+                                  <option value={InstallState.BIOS_POST}>System Boot (BIOS)</option>
+                                  <option value={InstallState.SETUP_LANGUAGE}>Windows Setup</option>
+                                  <option value={InstallState.OOBE_REGION}>Out-of-Box Experience</option>
+                                  <option value={InstallState.DESKTOP}>Desktop Environment</option>
+                                  <option value={InstallState.RECOVERY_CHOOSE_OPTION}>Recovery Mode</option>
+                              </select>
+                              <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
+                                  <ChevronDown size={16} />
+                              </div>
+                          </div>
+                      </div>
+
+                      <button 
+                        onClick={handlePowerOn}
+                        className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full transition-all text-sm uppercase tracking-wider font-semibold shadow-lg shadow-blue-900/20 hover:shadow-blue-600/40 active:scale-95"
+                      >
+                          <Maximize2 size={16} /> Power On System
+                      </button>
                   </div>
-                  <h1 className="text-2xl font-light tracking-widest uppercase mb-2">WinSim</h1>
-                  <p className="text-sm text-gray-500 mb-8">OS Installation Simulator</p>
                   
-                  <button 
-                    onClick={handlePowerOn}
-                    className="flex items-center gap-2 px-6 py-2 border border-gray-700 hover:border-blue-500 hover:bg-blue-500/10 hover:text-blue-400 rounded-full transition-all text-sm uppercase tracking-wider"
-                  >
-                      <Maximize2 size={16} /> Power On System
-                  </button>
-                  
-                  <div className="absolute bottom-8 text-xs text-gray-700 max-w-md text-center">
+                  <div className="absolute bottom-8 text-xs text-gray-600 max-w-md text-center">
                       For the best experience, this simulator requires Full Screen mode and Sound enabled.
                   </div>
+                  
+                  {/* Background Grid Effect */}
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,black_40%,transparent_100%)] pointer-events-none"></div>
               </div>
           )
       }
