@@ -117,14 +117,14 @@ export const Bios: React.FC<BiosProps> = ({ onSaveAndExit, initialConfig }) => {
   };
 
   return (
-    <div className="w-full h-full bg-[#0000AA] text-white font-mono p-4 select-none cursor-none flex flex-col">
+    <div className="w-full h-full bg-[#0000AA] text-white font-mono p-4 select-none cursor-none flex flex-col text-xs md:text-base overflow-auto">
       {/* Header */}
-      <div className="flex justify-between border-b-2 border-white pb-1 mb-2">
+      <div className="flex justify-between border-b-2 border-white pb-1 mb-2 shrink-0">
         <div>Phoenix TrustedCore(tm) Setup Utility</div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-8 mb-4 border-b border-white pb-1">
+      <div className="flex gap-4 md:gap-8 mb-4 border-b border-white pb-1 shrink-0 overflow-x-auto">
         {tabs.map((tab, idx) => (
           <div key={tab} className={`${activeTab === idx ? 'bg-white text-[#0000AA] px-2' : 'text-gray-300'}`}>
             {tab}
@@ -133,9 +133,9 @@ export const Bios: React.FC<BiosProps> = ({ onSaveAndExit, initialConfig }) => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex gap-4">
+      <div className="flex-1 flex flex-col md:flex-row gap-4 overflow-hidden">
         {/* Settings Area */}
-        <div className="w-2/3 border-r border-white pr-4">
+        <div className="w-full md:w-2/3 border-r-0 md:border-r border-white pr-0 md:pr-4 overflow-y-auto pb-4 md:pb-0">
             
             {activeTab === 0 && (
               <div className="space-y-2">
@@ -193,7 +193,7 @@ export const Bios: React.FC<BiosProps> = ({ onSaveAndExit, initialConfig }) => {
         </div>
 
         {/* Sidebar Help */}
-        <div className="w-1/3 text-sm text-gray-200">
+        <div className="w-full md:w-1/3 text-xs md:text-sm text-gray-200 border-t md:border-t-0 border-white pt-2 md:pt-0">
             {activeTab === 1 && selectedRow < 3 && (
               <div>
                   <p className="mb-4">Select UEFI for modern Windows installations (GPT).</p>
@@ -215,13 +215,13 @@ export const Bios: React.FC<BiosProps> = ({ onSaveAndExit, initialConfig }) => {
       </div>
 
       {/* Footer Controls */}
-      <div className="border-t-2 border-white pt-2 flex justify-between text-sm">
-        <div>
+      <div className="border-t-2 border-white pt-2 flex flex-col md:flex-row justify-between text-xs shrink-0 gap-2 md:gap-0">
+        <div className="flex flex-wrap gap-2">
            <span className="mr-4">F1: Help</span>
            <span className="mr-4">↑↓: Select Item</span>
            <span className="mr-4">←→/Tab: Select Menu</span>
         </div>
-        <div>
+        <div className="flex flex-wrap gap-2">
            <span className="mr-4">+/-: Change Values</span>
            <span className="mr-4">Enter: Select</span>
            <span className="mr-4">F10: Save and Exit</span>
