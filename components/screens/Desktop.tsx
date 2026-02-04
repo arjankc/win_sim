@@ -20,6 +20,7 @@ interface DesktopProps {
 
 interface DesktopWindow {
     id: string;
+    appId: string;
     title: string;
     icon: React.ReactNode;
     content: React.ReactNode;
@@ -30,8 +31,6 @@ interface DesktopWindow {
     zIndex: number;
     minimized: boolean;
     maximized: boolean;
-    restoreRect?: { x: number, y: number, width: number, height: number }; // For restoring from maximize
-    type: string; // 'app' | 'system'
 }
 
 // --- APP COMPONENTS ---
@@ -138,14 +137,14 @@ const DiskManagementApp = () => {
 
     return (
         <div className="flex flex-col h-full bg-white text-gray-900 font-sans text-xs select-none relative" onClick={() => setContextMenu(null)}>
-            <div className="bg-[#F0F0F0] border-b p-1 flex gap-2 text-gray-600">
+            <div className="bg-[#F0F0F0] border-b p-1 flex gap-2 text-gray-800">
                 <div className="border border-transparent hover:border-gray-400 hover:bg-gray-200 p-1 rounded cursor-default"><Settings size={16}/></div>
                 <div className="border border-transparent hover:border-gray-400 hover:bg-gray-200 p-1 rounded cursor-default"><RefreshCw size={16}/></div>
             </div>
             <div className="h-1/2 overflow-auto border-b border-gray-300">
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-white sticky top-0">
-                        <tr className="border-b border-gray-200 text-gray-500">
+                        <tr className="border-b border-gray-200 text-gray-700 font-semibold">
                             <th className="font-normal p-1 border-r w-32">Volume</th>
                             <th className="font-normal p-1 border-r w-20">Layout</th>
                             <th className="font-normal p-1 border-r w-20">Type</th>
@@ -203,7 +202,7 @@ const DiskManagementApp = () => {
                         })}
                     </div>
                 </div>
-                <div className="mt-8 flex gap-4 text-[10px] text-gray-600">
+                <div className="mt-8 flex gap-4 text-[10px] text-gray-800 font-medium">
                     <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#000080]"></div> Primary partition</div>
                     <div className="flex items-center gap-1"><div className="w-3 h-3 bg-black"></div> Unallocated</div>
                 </div>
@@ -213,8 +212,8 @@ const DiskManagementApp = () => {
                     {partitions.find(p => p.id === contextMenu.partitionId)?.type === 'unallocated' ? (
                         <>
                             <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer font-bold" onClick={handleCreateVolume}>New Simple Volume...</div>
-                            <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer text-gray-400">New Spanned Volume...</div>
-                            <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer text-gray-400">New Striped Volume...</div>
+                            <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer text-gray-500">New Spanned Volume...</div>
+                            <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer text-gray-500">New Striped Volume...</div>
                             <div className="border-t my-1"></div>
                             <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer">Properties</div>
                         </>
@@ -223,11 +222,11 @@ const DiskManagementApp = () => {
                             <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer">Open</div>
                             <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer">Explore</div>
                             <div className="border-t my-1"></div>
-                            <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer text-gray-400">Mark Partition as Active</div>
-                            <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer text-gray-400">Change Drive Letter and Paths...</div>
+                            <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer text-gray-500">Mark Partition as Active</div>
+                            <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer text-gray-500">Change Drive Letter and Paths...</div>
                             <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer" onClick={() => handleFormat(contextMenu.partitionId)}>Format...</div>
                             <div className="border-t my-1"></div>
-                            <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer text-gray-400">Shrink Volume...</div>
+                            <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer text-gray-500">Shrink Volume...</div>
                             <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer" onClick={() => handleDeleteVolume(contextMenu.partitionId)}>Delete Volume...</div>
                             <div className="border-t my-1"></div>
                             <div className="px-4 py-1 hover:bg-[#E5F3FF] cursor-pointer">Properties</div>
@@ -329,7 +328,7 @@ const SecurityApp = () => {
                                     <Activity size={32} className="text-blue-600"/>
                                     <div>
                                         <div className="font-semibold">Virus & threat protection</div>
-                                        <div className="text-sm text-green-600">No actions needed.</div>
+                                        <div className="text-sm text-green-700">No actions needed.</div>
                                     </div>
                                 </div>
                             </div>
@@ -338,7 +337,7 @@ const SecurityApp = () => {
                                     <Globe size={32} className="text-blue-600"/>
                                     <div>
                                         <div className="font-semibold">Firewall & network protection</div>
-                                        <div className="text-sm text-green-600">No actions needed.</div>
+                                        <div className="text-sm text-green-700">No actions needed.</div>
                                     </div>
                                 </div>
                             </div>
@@ -350,7 +349,7 @@ const SecurityApp = () => {
                         <h2 className="text-2xl font-light mb-6">Virus & threat protection</h2>
                         <div className="mb-8">
                             <div className="font-semibold mb-2">Current threats</div>
-                            <div className="text-sm text-gray-600 mb-4">Last scan: {lastScan}</div>
+                            <div className="text-sm text-gray-700 mb-4">Last scan: {lastScan}</div>
                             {scanning ? (
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
@@ -368,7 +367,7 @@ const SecurityApp = () => {
                             <div className="flex items-center justify-between py-2">
                                 <div>
                                     <div className="font-medium">Real-time protection</div>
-                                    <div className="text-sm text-gray-500">Locates and stops malware from installing or running on your device.</div>
+                                    <div className="text-sm text-gray-600">Locates and stops malware from installing or running on your device.</div>
                                 </div>
                                 <button onClick={() => setRealtime(!realtime)} className={`w-10 h-5 rounded-full relative transition-colors ${realtime ? 'bg-blue-600' : 'bg-gray-400'}`}>
                                     <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${realtime ? 'left-6' : 'left-1'}`}></div>
@@ -393,14 +392,14 @@ const SecurityApp = () => {
                                         <CheckCircle className="text-green-600" size={32}/>
                                         <div>
                                             <div className="font-semibold text-lg">Private network</div>
-                                            <div className="text-sm text-gray-500">Firewall is on.</div>
+                                            <div className="text-sm text-gray-600">Firewall is on.</div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <CheckCircle className="text-green-600" size={32}/>
                                         <div>
                                             <div className="font-semibold text-lg">Public network</div>
-                                            <div className="text-sm text-gray-500">Firewall is on.</div>
+                                            <div className="text-sm text-gray-600">Firewall is on.</div>
                                         </div>
                                     </div>
                                 </div>
@@ -485,7 +484,7 @@ const MailApp = () => {
                 ) : (
                     <div className="space-y-1">
                         {view === 'inbox' ? 
-                            (inbox.length === 0 ? <div className="text-gray-500 text-center mt-10">Nothing here</div> : inbox.map((m,i)=><div key={i} className="border-b p-3 hover:bg-blue-50 cursor-pointer"><div className="font-bold flex justify-between"><span>{m.from}</span><span className="text-xs font-normal text-gray-500">{m.date}</span></div><div>{m.subject}</div><div className="text-gray-500 truncate text-sm">{m.body}</div></div>)) 
+                            (inbox.length === 0 ? <div className="text-gray-500 text-center mt-10">Nothing here</div> : inbox.map((m,i)=><div key={i} className="border-b p-3 hover:bg-blue-50 cursor-pointer"><div className="font-bold flex justify-between"><span>{m.from}</span><span className="text-xs font-normal text-gray-500">{m.date}</span></div><div>{m.subject}</div><div className="text-gray-600 truncate text-sm">{m.body}</div></div>)) 
                             : 
                             (sent.length === 0 ? <div className="text-gray-500 text-center mt-10">No sent mail</div> : sent.map((m,i)=><div key={i} className="border-b p-3 hover:bg-blue-50 cursor-pointer"><div className="font-bold flex justify-between"><span>To: {m.to}</span><span className="text-xs font-normal text-gray-500">{m.date}</span></div><div>{m.subject}</div></div>))
                         }
@@ -498,6 +497,31 @@ const MailApp = () => {
 
 const WordApp = () => {
     const { showToast } = useSimulation();
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const t = setTimeout(() => setLoading(false), 2000);
+        return () => clearTimeout(t);
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="h-full w-full bg-[#2B579A] flex items-center justify-center relative overflow-hidden select-none text-white">
+                <div className="z-10 flex flex-col items-start">
+                    <h1 className="text-5xl font-light mb-2">Word</h1>
+                    <div className="flex gap-1 mt-4">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-[bounce_1s_infinite_0ms]"></div>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-[bounce_1s_infinite_200ms]"></div>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-[bounce_1s_infinite_400ms]"></div>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-[bounce_1s_infinite_600ms]"></div>
+                    </div>
+                    <div className="mt-2 text-sm font-light">Starting...</div>
+                </div>
+                <FileText className="absolute -right-10 -bottom-20 text-white opacity-10" size={300} />
+            </div>
+        )
+    }
+
     return (
         <div className="flex flex-col h-full bg-white text-gray-900 font-sans select-none">
             {/* Title Bar */}
@@ -537,7 +561,7 @@ const WordApp = () => {
                         <div className="flex gap-1">
                             <Scissors size={12}/> <Copy size={12}/>
                         </div>
-                        <span className="text-[10px] text-gray-500 mt-auto">Clipboard</span>
+                        <span className="text-[10px] text-gray-600 mt-auto">Clipboard</span>
                     </div>
                     
                     {/* Font */}
@@ -551,7 +575,7 @@ const WordApp = () => {
                             <div className="p-1 hover:bg-gray-200 rounded cursor-pointer italic"><Italic size={14}/></div>
                             <div className="p-1 hover:bg-gray-200 rounded cursor-pointer underline"><Underline size={14}/></div>
                         </div>
-                        <span className="text-[10px] text-gray-500 mt-auto text-center">Font</span>
+                        <span className="text-[10px] text-gray-600 mt-auto text-center">Font</span>
                     </div>
 
                     {/* Paragraph */}
@@ -564,7 +588,7 @@ const WordApp = () => {
                             <div className="p-1 hover:bg-gray-200 rounded cursor-pointer"><AlignCenter size={14}/></div>
                             <div className="p-1 hover:bg-gray-200 rounded cursor-pointer"><AlignRight size={14}/></div>
                         </div>
-                        <span className="text-[10px] text-gray-500 mt-auto text-center">Paragraph</span>
+                        <span className="text-[10px] text-gray-600 mt-auto text-center">Paragraph</span>
                     </div>
                     
                     {/* Styles */}
@@ -577,7 +601,7 @@ const WordApp = () => {
                                 </div>
                             ))}
                         </div>
-                        <span className="text-[10px] text-gray-500 mt-auto text-center">Styles</span>
+                        <span className="text-[10px] text-gray-600 mt-auto text-center">Styles</span>
                     </div>
                 </div>
             </div>
@@ -614,6 +638,31 @@ const WordApp = () => {
 
 const ExcelApp = () => {
     const { showToast } = useSimulation();
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const t = setTimeout(() => setLoading(false), 2000);
+        return () => clearTimeout(t);
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="h-full w-full bg-[#217346] flex items-center justify-center relative overflow-hidden select-none text-white">
+                <div className="z-10 flex flex-col items-start">
+                    <h1 className="text-5xl font-light mb-2">Excel</h1>
+                    <div className="flex gap-1 mt-4">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-[bounce_1s_infinite_0ms]"></div>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-[bounce_1s_infinite_200ms]"></div>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-[bounce_1s_infinite_400ms]"></div>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-[bounce_1s_infinite_600ms]"></div>
+                    </div>
+                    <div className="mt-2 text-sm font-light">Starting...</div>
+                </div>
+                <Grid3X3 className="absolute -right-10 -bottom-20 text-white opacity-10" size={300} />
+            </div>
+        )
+    }
+
     return (
         <div className="flex flex-col h-full bg-white text-gray-900 font-sans select-none">
             {/* Title Bar */}
@@ -649,7 +698,7 @@ const ExcelApp = () => {
                             <Clipboard size={24} className="text-gray-600"/>
                             <span className="text-[10px]">Paste</span>
                         </div>
-                        <span className="text-[10px] text-gray-500 mt-auto">Clipboard</span>
+                        <span className="text-[10px] text-gray-600 mt-auto">Clipboard</span>
                     </div>
                     <div className="flex flex-col h-full px-2 border-r border-gray-200 min-w-[140px]">
                         <div className="flex gap-1 mb-1">
@@ -661,7 +710,7 @@ const ExcelApp = () => {
                             <div className="p-1 hover:bg-gray-200 rounded cursor-pointer italic"><Italic size={14}/></div>
                             <div className="p-1 hover:bg-gray-200 rounded cursor-pointer underline"><Underline size={14}/></div>
                         </div>
-                        <span className="text-[10px] text-gray-500 mt-auto text-center">Font</span>
+                        <span className="text-[10px] text-gray-600 mt-auto text-center">Font</span>
                     </div>
                     <div className="flex flex-col h-full px-2 border-r border-gray-200 min-w-[100px]">
                         <div className="flex gap-1 mb-1 mt-1 justify-center">
@@ -669,7 +718,7 @@ const ExcelApp = () => {
                             <div className="p-1 hover:bg-gray-200 rounded cursor-pointer"><AlignCenter size={14}/></div>
                             <div className="p-1 hover:bg-gray-200 rounded cursor-pointer"><AlignRight size={14}/></div>
                         </div>
-                        <span className="text-[10px] text-gray-500 mt-auto text-center">Alignment</span>
+                        <span className="text-[10px] text-gray-600 mt-auto text-center">Alignment</span>
                     </div>
                 </div>
             </div>
@@ -708,6 +757,31 @@ const ExcelApp = () => {
 
 const PowerPointApp = () => {
     const { showToast } = useSimulation();
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const t = setTimeout(() => setLoading(false), 2000);
+        return () => clearTimeout(t);
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="h-full w-full bg-[#D24726] flex items-center justify-center relative overflow-hidden select-none text-white">
+                <div className="z-10 flex flex-col items-start">
+                    <h1 className="text-5xl font-light mb-2">PowerPoint</h1>
+                    <div className="flex gap-1 mt-4">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-[bounce_1s_infinite_0ms]"></div>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-[bounce_1s_infinite_200ms]"></div>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-[bounce_1s_infinite_400ms]"></div>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-[bounce_1s_infinite_600ms]"></div>
+                    </div>
+                    <div className="mt-2 text-sm font-light">Starting...</div>
+                </div>
+                <Projector className="absolute -right-10 -bottom-20 text-white opacity-10" size={300} />
+            </div>
+        )
+    }
+
     return (
         <div className="flex flex-col h-full bg-white text-gray-900 font-sans select-none">
             {/* Title Bar */}
@@ -743,14 +817,14 @@ const PowerPointApp = () => {
                             <Clipboard size={24} className="text-gray-600"/>
                             <span className="text-[10px]">Paste</span>
                         </div>
-                        <span className="text-[10px] text-gray-500 mt-auto">Clipboard</span>
+                        <span className="text-[10px] text-gray-600 mt-auto">Clipboard</span>
                     </div>
                     <div className="flex flex-col h-full px-2 border-r border-gray-200 min-w-[80px] items-center">
                         <div className="flex flex-col items-center cursor-pointer hover:bg-gray-100 p-1 rounded">
                             <div className="border border-gray-300 p-1 bg-white mb-1"><FileText size={16}/></div>
                             <span className="text-[10px] text-center">New<br/>Slide</span>
                         </div>
-                        <span className="text-[10px] text-gray-500 mt-auto text-center">Slides</span>
+                        <span className="text-[10px] text-gray-600 mt-auto text-center">Slides</span>
                     </div>
                     <div className="flex flex-col h-full px-2 border-r border-gray-200 min-w-[140px]">
                         <div className="flex gap-1 mb-1">
@@ -762,7 +836,7 @@ const PowerPointApp = () => {
                             <div className="p-1 hover:bg-gray-200 rounded cursor-pointer italic"><Italic size={14}/></div>
                             <div className="p-1 hover:bg-gray-200 rounded cursor-pointer underline"><Underline size={14}/></div>
                         </div>
-                        <span className="text-[10px] text-gray-500 mt-auto text-center">Font</span>
+                        <span className="text-[10px] text-gray-600 mt-auto text-center">Font</span>
                     </div>
                 </div>
             </div>
@@ -1022,7 +1096,7 @@ const BrowserApp = ({ onDownload }: { onDownload: (file: string) => void }) => {
                             </div>
                             <div>
                                 <div className="text-sm font-semibold">{downloading.file}</div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-gray-600">
                                     {downloading.progress < 100 ? `${Math.round(downloading.progress)}% - 2.4 MB/s` : 'Open file'}
                                 </div>
                             </div>
@@ -1096,7 +1170,7 @@ const OfficeInstallerApp = ({ onComplete }: { onComplete: () => void }) => {
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
                     <div className="text-4xl text-[#E74C3C] mb-4">You're all set!</div>
                     <div className="text-xl text-gray-600 mb-2">Office is installed now</div>
-                    <div className="text-sm text-gray-500 mb-8">Click Close to start using your apps.</div>
+                    <div className="text-sm text-gray-600 mb-8">Click Close to start using your apps.</div>
                     
                     {/* App Icons Row */}
                     <div className="flex gap-4 mb-8">
@@ -1123,12 +1197,12 @@ const OfficeInstallerApp = ({ onComplete }: { onComplete: () => void }) => {
                  </div>
                  
                  <h2 className="text-2xl text-gray-700 font-light mb-2">Installing Office</h2>
-                 <p className="text-gray-500 text-sm mb-8">Please stay online while Office downloads.</p>
+                 <p className="text-gray-600 text-sm mb-8">Please stay online while Office downloads.</p>
                  
                  <div className="w-64 h-1 bg-gray-200 rounded-full overflow-hidden">
                      <div className="h-full bg-[#E74C3C] transition-all duration-100" style={{width: `${progress}%`}}></div>
                  </div>
-                 <div className="mt-2 text-xs text-gray-400">{Math.round(progress)}%</div>
+                 <div className="mt-2 text-xs text-gray-600">{Math.round(progress)}%</div>
             </div>
             
             <div className="absolute top-0 right-0 p-4">
@@ -1185,7 +1259,7 @@ const SPSSInstallerApp = ({ onComplete }: { onComplete: () => void }) => {
                         <>
                             <h3 className="font-bold text-lg mb-4">Welcome to the InstallShield Wizard for IBM SPSS Statistics 27</h3>
                             <p className="mb-4">The InstallShield(R) Wizard will install IBM SPSS Statistics 27 on your computer. To continue, click Next.</p>
-                            <p className="mb-4 text-gray-600">WARNING: This program is protected by copyright law and international treaties.</p>
+                            <p className="mb-4 text-gray-700">WARNING: This program is protected by copyright law and international treaties.</p>
                         </>
                     )}
                     {step === 1 && (
@@ -1394,7 +1468,7 @@ const ExplorerApp = ({ onBsod, onRun, downloadedFiles = [] }: { onBsod: () => vo
                 {selectedItem && <button onClick={handleDelete} className="p-1 hover:bg-red-100 text-red-500 rounded" title="Delete"><Trash2 size={16}/></button>}
             </div>
             <div className="flex-1 p-4 grid grid-cols-4 content-start gap-4 overflow-y-auto" onClick={() => setSelectedItem(null)}>
-                {items.length === 0 && <div className="col-span-4 text-gray-400 text-center mt-10">This folder is empty.</div>}
+                {items.length === 0 && <div className="col-span-4 text-gray-600 text-center mt-10">This folder is empty.</div>}
                 {items.map((item: any, i: number) => (
                     <div 
                         key={i} 
@@ -1404,7 +1478,7 @@ const ExplorerApp = ({ onBsod, onRun, downloadedFiles = [] }: { onBsod: () => vo
                     >
                         {item.icon}
                         <span className="text-center text-xs group-hover:text-blue-600 truncate w-full text-gray-800">{item.name}</span>
-                        {item.info && <span className="text-[10px] text-gray-400">{item.info}</span>}
+                        {item.info && <span className="text-[10px] text-gray-600">{item.info}</span>}
                     </div>
                 ))}
             </div>
@@ -1944,7 +2018,7 @@ export const Desktop: React.FC<DesktopProps> = ({ username = "User", onRestart }
                 </div>
 
                 <div onClick={() => openWindow('recycle', 'Recycle Bin', <Trash2 size={18} className="text-gray-400"/>, (
-                     <div className="p-4 text-center text-gray-400 mt-10">This folder is empty.</div>
+                     <div className="p-4 text-center text-gray-600 mt-10">This folder is empty.</div>
                 ))} className="flex flex-col items-center group cursor-pointer p-2 hover:bg-white/10 rounded border border-transparent hover:border-white/10 w-24">
                     <Trash2 size={32} className="text-gray-200 drop-shadow-md"/>
                     <span className="text-white text-xs mt-1 text-center drop-shadow-md text-shadow">Recycle Bin</span>

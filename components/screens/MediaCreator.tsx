@@ -156,7 +156,7 @@ export const MediaCreator: React.FC<MediaCreatorProps> = ({ onComplete }) => {
         <div className="bg-[#ECECE9] p-3 text-[11px] text-gray-800 flex flex-col gap-3">
           {/* Drive Properties */}
           <div className="flex flex-col gap-2">
-             <div className="flex items-center gap-1 text-gray-500 font-semibold border-b border-gray-300 pb-0.5"><HardDrive size={14}/> <span>Drive Properties</span></div>
+             <div className="flex items-center gap-1 text-gray-700 font-semibold border-b border-gray-300 pb-0.5"><HardDrive size={14}/> <span>Drive Properties</span></div>
              <div className="space-y-2 pl-1">
                  <div>
                      <label className="block mb-1 text-gray-700">Device</label>
@@ -167,7 +167,7 @@ export const MediaCreator: React.FC<MediaCreatorProps> = ({ onComplete }) => {
                  <div>
                      <label className="block mb-1 text-gray-700">Boot selection</label>
                      <div className="flex gap-1 h-7">
-                         <div className={`flex-1 border border-gray-400 p-1 shadow-sm flex justify-between items-center cursor-default ${isoName ? 'bg-white text-black' : 'bg-gray-100 text-gray-500 italic'}`}>
+                         <div className={`flex-1 border border-gray-400 p-1 shadow-sm flex justify-between items-center cursor-default ${isoName ? 'bg-white text-black' : 'bg-gray-100 text-gray-600 italic'}`}>
                              <span className="truncate">{isoName || "Disk or ISO image (Please select)"}</span>
                          </div>
                          <button 
@@ -193,7 +193,7 @@ export const MediaCreator: React.FC<MediaCreatorProps> = ({ onComplete }) => {
 
           {/* Format Options */}
           <div className="flex flex-col gap-2 mt-1">
-             <div className="flex items-center gap-1 text-gray-500 font-semibold border-b border-gray-300 pb-0.5"><Settings size={14}/> <span>Format Options</span></div>
+             <div className="flex items-center gap-1 text-gray-700 font-semibold border-b border-gray-300 pb-0.5"><Settings size={14}/> <span>Format Options</span></div>
              <div className="space-y-2 pl-1">
                  <div>
                      <label className="block mb-1 text-gray-700">Volume label</label>
@@ -208,11 +208,11 @@ export const MediaCreator: React.FC<MediaCreatorProps> = ({ onComplete }) => {
 
           {/* Status & Buttons */}
           <div className="mt-2 space-y-2">
-              <div className="flex items-center justify-between text-gray-500 cursor-pointer" onClick={() => setShowLog(!showLog)}><span>Status</span>{showLog ? <ChevronDown size={14}/> : <ChevronUp size={14}/>}</div>
+              <div className="flex items-center justify-between text-gray-700 cursor-pointer" onClick={() => setShowLog(!showLog)}><span>Status</span>{showLog ? <ChevronDown size={14}/> : <ChevronUp size={14}/>}</div>
               <div className="h-6 w-full bg-gray-200 border border-gray-400 relative">
                   {isBurning && <div className="absolute inset-0 bg-[#00AA00] transition-all duration-200" style={{ width: `${progress}%` }}></div>}
                   {isFinished && <div className="absolute inset-0 bg-[#00AA00] w-full"></div>}
-                  <div className={`absolute inset-0 flex items-center justify-center font-semibold ${isFinished || isBurning ? 'text-white' : 'text-gray-600'}`}>{statusText}</div>
+                  <div className={`absolute inset-0 flex items-center justify-center font-semibold ${isFinished || isBurning ? 'text-white' : 'text-gray-800'}`}>{statusText}</div>
               </div>
               {showLog && (<div className="h-32 bg-white border border-gray-400 overflow-y-auto font-mono text-[10px] p-1 shadow-inner text-gray-900">{logs.map((log, i) => <div key={i}>{log}</div>)}<div ref={logEndRef} /></div>)}
               <div className="flex gap-2 pt-2 border-t border-gray-300">

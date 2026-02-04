@@ -97,7 +97,7 @@ const LanguageStep: React.FC<{onNext: () => void}> = ({onNext}) => (
                     className="w-16 md:w-24 h-auto mx-auto mb-0 md:mb-4"
                   />
             </div>
-            <div className="text-xs text-gray-500 text-center md:text-left hidden md:block">
+            <div className="text-xs text-gray-600 text-center md:text-left hidden md:block">
                 &copy; 2025 Microsoft Corp.
             </div>
         </div>
@@ -411,14 +411,14 @@ const TypeStep: React.FC<{onNext: () => void}> = ({onNext}) => (
                     <div className="p-2 bg-gray-100 rounded group-hover:bg-white shrink-0"><ArrowRight className="text-blue-500"/></div>
                     <div>
                         <div className="font-bold text-gray-800">Upgrade: Install Windows and keep files, settings, and applications</div>
-                        <div className="text-xs text-gray-500 mt-1">The files, settings, and applications are moved to Windows with this option.</div>
+                        <div className="text-xs text-gray-600 mt-1">The files, settings, and applications are moved to Windows with this option.</div>
                     </div>
                 </button>
                 <button onClick={onNext} className="w-full text-left p-4 border border-gray-300 hover:bg-[#E5F1FB] hover:border-[#0078D7] transition-colors group flex gap-4 items-start ring-2 ring-yellow-400/50">
                     <div className="p-2 bg-gray-100 rounded group-hover:bg-white shrink-0"><HardDrive className="text-blue-500"/></div>
                     <div>
                         <div className="font-bold text-gray-800">Custom: Install Windows only (advanced)</div>
-                        <div className="text-xs text-gray-500 mt-1">The files, settings, and applications aren't moved to Windows with this option.</div>
+                        <div className="text-xs text-gray-600 mt-1">The files, settings, and applications aren't moved to Windows with this option.</div>
                     </div>
                 </button>
             </div>
@@ -513,7 +513,7 @@ const CopyingStep: React.FC<{onNext: () => void, onBack: () => void}> = ({onNext
                     <div className="space-y-4 text-gray-700 select-none">
                         <div className="flex items-center gap-3"><div className="w-5 flex justify-center"><Check className="text-green-600 font-bold" size={18}/></div><span>Copying Windows files (100%)</span></div>
                         <div className="flex items-center gap-3"><div className="w-5 flex justify-center"><span className="w-4"/></div><span className="font-bold text-black">Getting files ready for installation ({Math.floor(progress)}%)</span></div>
-                        <div className="flex items-center gap-3"><div className="w-5 flex justify-center"><span className="w-4"/></div><span className="text-gray-400">Installing features</span></div>
+                        <div className="flex items-center gap-3"><div className="w-5 flex justify-center"><span className="w-4"/></div><span className="text-gray-600">Installing features</span></div>
                     </div>
                     <div className="absolute bottom-0 left-0 w-full bg-gray-100 h-28 p-6 border-t border-gray-200 flex flex-col justify-between">
                         <div className="w-full h-4 bg-gray-300 rounded-full overflow-hidden shadow-inner relative"><div className="h-full bg-[#00AA00]" style={{ width: `${progress}%` }}/></div>
