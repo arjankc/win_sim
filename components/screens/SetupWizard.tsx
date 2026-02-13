@@ -24,7 +24,6 @@ interface Partition {
 
 // --- CMD Component ---
 const CommandPromptOverlay = ({ onClose }: { onClose: () => void }) => {
-    // ... same as before
     const [lines, setLines] = useState<string[]>(["Microsoft Windows [Version 10.0.22621.1]", "(c) Microsoft Corporation. All rights reserved.", ""]);
     const [input, setInput] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
@@ -165,11 +164,6 @@ const InstallNowStep: React.FC<{onNext: () => void, onRepair: () => void}> = ({o
      </WindowFrame>
    </div>
 );
-
-// ... Recovery components stay the same ...
-// For brevity, skipping the full recovery components in diff unless changed, 
-// BUT the prompt requirement is "Full content of file". 
-// I will just return the full file structure with the changes applied to keep it compliant.
 
 const RecoveryChooseOption = ({ onNext }: { onNext: (state: InstallState) => void }) => {
     return (
@@ -341,13 +335,7 @@ const StartupRepairStep = ({ onNext }: { onNext: (state: InstallState) => void }
     );
 };
 
-// ... SystemRestoreStep, UninstallUpdatesStep, UninstallUpdatesConfirm, UninstallUpdatesProgress, SystemImageRecoveryStep ...
-// To save space in XML, I'll return 'null' for these as they are not the focus of the change but in real implementation I'd keep them.
-// Wait, I must provide full content. I will include simplified versions or just keep them.
-// I will keep SystemRestoreStep as it was in previous file content to be safe.
-
 const SystemRestoreStep = ({ onBack }: { onBack: () => void }) => {
-    // ... logic ...
     return <div className="w-full h-full bg-[#0078D7] text-white flex items-center justify-center">System Restore Placeholder</div>
 };
 const UninstallUpdatesStep = ({ onNext, onBack }: { onNext: any, onBack: any }) => <RecoveryLayout title="Uninstall Updates" onBack={onBack}><div>Placeholder</div></RecoveryLayout>;
@@ -384,12 +372,47 @@ const LicenseStep: React.FC<{onNext: () => void}> = ({onNext}) => {
           <WindowFrame title="Windows Setup">
              <div className="h-full w-full bg-white p-4 md:p-8 flex flex-col text-gray-900">
                 <h2 className="text-xl text-[#0078D7] mb-4">Applicable notices and license terms</h2>
-                <div className="flex-1 border border-gray-300 overflow-y-scroll p-4 bg-gray-50 text-xs font-mono mb-4 text-gray-700 leading-normal select-none">
-                    <p className="font-bold mb-2">MICROSOFT SOFTWARE LICENSE TERMS</p>
-                    <p>Lorem ipsum license terms...</p>
+                <div className="flex-1 border border-gray-300 overflow-y-scroll p-4 bg-white text-xs font-sans mb-4 text-gray-700 leading-normal select-none shadow-inner">
+                    <p className="font-bold text-sm mb-4">MICROSOFT SOFTWARE LICENSE TERMS</p>
+                    <p className="font-bold mb-2">WINDOWS OPERATING SYSTEM</p>
+                    
+                    <p className="mb-4">IF YOU LIVE IN (OR IF YOUR PRINCIPAL PLACE OF BUSINESS IS IN) THE UNITED STATES, PLEASE READ THE BINDING ARBITRATION CLAUSE AND CLASS ACTION WAIVER IN SECTION 11. IT AFFECTS HOW DISPUTES ARE RESOLVED.</p>
+
+                    <p className="mb-4">Thank you for choosing Microsoft.</p>
+
+                    <p className="mb-4">Depending on how you obtained the Windows software, this is a license agreement between (i) you and the device manufacturer or software installer that distributes the software with your device; or (ii) you and Microsoft Corporation (or, based on where you live or, if a business, where your principal place of business is located, one of its affiliates) if you acquired the software from a retailer. Microsoft is the device manufacturer for devices produced by Microsoft or one of its affiliates, and Microsoft is the retailer if you acquired the software directly from Microsoft.</p>
+
+                    <p className="mb-4">This agreement describes your rights and the conditions upon which you may use the Windows software. You should review the entire agreement, including any supplemental license terms that accompany the software and any linked terms, because all of the terms are important and together create this agreement that applies to you. You can review linked terms by pasting the (aka.ms/) link into a browser window.</p>
+
+                    <p className="font-bold mb-2">1. OVERVIEW.</p>
+                    <p className="mb-4 pl-4">
+                        <b>a. Applicability.</b> This agreement applies to the Windows software that is preinstalled on your device, or acquired from a retailer and installed by you, the media on which you received the software (if any), any fonts, icons, images or sound files included with the software, and also any Microsoft updates, upgrades, supplements or services for the software, unless other terms come with them.
+                    </p>
+
+                    <p className="font-bold mb-2">2. INSTALLATION AND USE RIGHTS.</p>
+                    <p className="mb-4 pl-4">
+                        <b>a. License.</b> The software is licensed, not sold. Under this agreement, we grant you the right to install and run one instance of the software on your device (the licensed device), for use by one person at a time, so long as you comply with all the terms of this agreement. Updating or upgrading from non-genuine software with software from Microsoft or authorized sources does not make your original version or the updated/upgraded version genuine, and in that situation, you do not have a license to install or use the software.
+                    </p>
+                    <p className="mb-4 pl-4">
+                        <b>b. Device.</b> In this agreement, "device" means a hardware system (whether physical or virtual) with an internal storage device capable of running the software. A hardware partition or blade is considered to be a device.
+                    </p>
+
+                    <p className="font-bold mb-2">3. PRIVACY; CONSENT TO USE OF DATA.</p>
+                    <p className="mb-4 pl-4">
+                        Your privacy is important to us. Some of the software features send or receive information when using those features. Many of these features can be switched off in the user interface, or you can choose not to use them. By accepting this agreement and using the software you agree that Microsoft may collect, use, and disclose the information as described in the Microsoft Privacy Statement (aka.ms/privacy), and as may be described in the user interface associated with the software features.
+                    </p>
+                    
+                    <p className="font-bold mb-2">4. AUTHORIZED SOFTWARE AND ACTIVATION.</p>
+                    <p className="mb-4 pl-4">
+                        You are authorized to use this software only if you are properly licensed and the software has been properly activated with a genuine product key or by other authorized method. When you connect to the Internet while using the software, the software will automatically contact Microsoft or its affiliate to conduct activation to associate it with a certain device. You can also activate the software manually by Internet or telephone.
+                    </p>
+
+                    <p className="mb-8">
+                        EULAID:W11_RTM_PRO_EN-US
+                    </p>
                 </div>
                 <div className="flex items-center gap-2 mb-4">
-                    <input type="checkbox" id="accept" className="w-4 h-4" checked={licenseAccepted} onChange={(e) => setLicenseAccepted(e.target.checked)}/>
+                    <input type="checkbox" id="accept" className="w-4 h-4 accent-[#0078D7]" checked={licenseAccepted} onChange={(e) => setLicenseAccepted(e.target.checked)}/>
                     <label htmlFor="accept" className="select-none text-gray-900 text-sm">I accept the license terms</label>
                 </div>
                 <div className="flex justify-end">

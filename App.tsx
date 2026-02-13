@@ -6,7 +6,7 @@ import { SetupWizard } from './components/screens/SetupWizard';
 import { OOBE } from './components/screens/OOBE';
 import { Desktop } from './components/screens/Desktop';
 import { ContextualHelp } from './components/ui/ContextualHelp';
-import { AlertTriangle, Power, Maximize2, ChevronDown, Info } from 'lucide-react';
+import { AlertTriangle, Power, Maximize2, ChevronDown, Info, RotateCcw } from 'lucide-react';
 import { playSound } from './services/soundService';
 import { SimulationProvider, useSimulation } from './contexts/SimulationContext';
 
@@ -73,6 +73,34 @@ const AppContent: React.FC = () => {
     playSound('click');
     setCurrentState(startPoint);
     setHasStarted(true);
+  };
+
+  const handleFullReset = () => {
+      if (window.confirm("Reset Simulation?\n\nThis will return you to the main screen and reset all progress.")) {
+          playSound('click');
+          
+          // Reset internal state
+          setHasStarted(false);
+          setCurrentState(InstallState.MEDIA_CREATOR);
+          
+          // Reset Configs
+          setMediaConfig(null);
+          setBiosConfig({
+            bootMode: 'UEFI',
+            secureBoot: true,
+            usbBootEnabled: true,
+            bootOrder: ['USB', 'HDD']
+          });
+          setUserData({ username: "User" });
+          setBootError(null);
+          
+          // CRITICAL: Reset the start point selector so "Power On" starts from the beginning
+          setStartPoint(InstallState.MEDIA_CREATOR);
+          
+          if (document.fullscreenElement) {
+              document.exitFullscreen().catch(err => console.error(err));
+          }
+      }
   };
 
   // --- Logic Engine ---
@@ -336,7 +364,20 @@ const AppContent: React.FC = () => {
   return (
     <>
       {renderSimulationContent()}
-      {hasStarted && <ContextualHelp state={currentState} />}
+      {hasStarted && (
+          <>
+            <ContextualHelp state={currentState} />
+            <div className="fixed bottom-32 right-6 z-[100000] pointer-events-auto">
+                <button 
+                    onClick={handleFullReset}
+                    className="w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 bg-red-500 hover:bg-red-600 text-white hover:scale-110 active:scale-95 group relative"
+                    title="Restart Simulation"
+                >
+                    <RotateCcw size={20} className="group-hover:-rotate-180 transition-transform duration-500" />
+                </button>
+            </div>
+          </>
+      )}
       <ToastDisplay />
     </>
   );
